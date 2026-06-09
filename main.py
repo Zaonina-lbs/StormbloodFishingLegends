@@ -7,6 +7,7 @@ from astrbot.api import logger
 
 # 导入游戏引擎模块（所有游戏逻辑均为纯函数，无需异步包装）
 from game_engine import (
+    init_engine,
     register_user,
     sign_in,
     check_gold,
@@ -34,6 +35,9 @@ from game_engine import (
 # 热更新
 import hot_reload
 
+# AstrBot 路径工具
+from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path
+
 
 def parse_args(message_str: str):
     """安全地解析消息字符串中的参数，支持引号括起来的参数"""
@@ -54,8 +58,17 @@ class FishingPlugin(Star):
         super().__init__(context)
 
     async def initialize(self):
-        """插件初始化"""
-        logger.info("红莲垂钓异闻 插件已加载")
+        """插件初始化——在 AstrBot 数据目录下创建插件专用目录并初始化游戏引擎"""
+        # 获取 AstrBot 插件数据根目录: <root>/data/plugin_data
+        plugin_data_root = get_astrbot_plugin_data_path()
+        # 为本插件创建独立子目录，避免与其他插件冲突
+        self_data_dir = os.path.join(plugin_data_root, "stormblood_fishing_legends")
+        os.makedirs(self_data_dir, exist_ok=True)
+
+        # 初始化游戏引擎数据库，数据库文件将存放在 data_dir 下
+        init_engine(data_dir=self_data_dir)
+
+        logger.info(f"红莲垂钓异闻 插件已加载，数据目录: {self_data_dir}")
 
     # ==================== 账号系统 ====================
 

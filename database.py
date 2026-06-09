@@ -15,12 +15,22 @@ def load_config():
 
 
 class Database:
-    def __init__(self, db_path=None):
+    def __init__(self, db_path=None, data_dir=None):
         if db_path is None:
-            config = load_config()
-            db_path = config.get("db_path", "fishing_game.db")
+            if data_dir:
+                db_path = os.path.join(data_dir, "fishing_game.db")
+            else:
+                config = load_config()
+                db_path = config.get("db_path", "fishing_game.db")
         if not os.path.isabs(db_path):
-            db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_path)
+            if data_dir:
+                db_path = os.path.join(data_dir, "fishing_game.db")
+            else:
+                db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_path)
+        # ensure parent directory exists
+        parent = os.path.dirname(db_path)
+        if parent and not os.path.exists(parent):
+            os.makedirs(parent, exist_ok=True)
         self.db_path = db_path
         self.conn = None
 
@@ -581,16 +591,16 @@ class Database:
 
 
 _db_instance=None
-def get_db(db_path=None):
+def get_db(db_path=None, data_dir=None):
     global _db_instance
     if _db_instance is None:
-        _db_instance=Database(db_path)
+        _db_instance=Database(db_path, data_dir=data_dir)
     return _db_instance
 
 def get_db_path():
     return get_db().db_path
 
-def set_db_path(db_path):
+def init_db_with_path(db_path, data_dir=None):
     global _db_instance
-    _db_instance=Database(db_path)
+    _db_instance=Database(db_path, data_dir=data_dir)
     return _db_instance
