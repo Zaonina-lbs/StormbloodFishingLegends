@@ -528,31 +528,54 @@ class Database:
         return [dict(r) for r in rows]
 
     # ---- handbook ----
-    def get_handbook(self,user_id,group_id,fishing_ground=None):
-        """获取图鉴数据，支持按钓场筛选。
+    def get_handbook(self,user_id,group_id,region=None,fishing_ground=None):
+        """获取图鉴数据，支持按地区和/或钓场筛选。
         返回按 region→fishing_ground→fish_type→name 排序的列表，
         包含 bait、base_value、min_size、max_size 等信息。"""
         self.connect()
-        query="SELECT DISTINCT name,fish_type,region,fishing_ground,bait,base_value,min_size,min_big_size,max_size FROM fish_base"
+        query="SELECT DISTINCT name,fish_type,region,fishing_ground,bait,weather,base_value,min_size,min_big_size,max_size FROM fish_base"
+        conditions=[]
         params=[]
+        if region:
+            conditions.append("region=?")
+            params.append(region)
         if fishing_ground:
-            query+=" WHERE fishing_ground=?"
+            conditions.append("fishing_ground=?")
             params.append(fishing_ground)
+        if conditions:
+            query+=" WHERE "+" AND ".join(conditions)
         query+=" ORDER BY region, fishing_ground, fish_type, name"
         bf=self.conn.execute(query,params).fetchall()
         bf=[dict(r) for r in bf]
         caught=set()
         q="SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?"
+        cq_params=[user_id,group_id]
+        if region:
+            q+=" AND fishing_ground IN (SELECT DISTINCT fishing_ground FROM fish_base WHERE region=?)"
+            cq_params.append(region)
         if fishing_ground:
             q+=" AND fishing_ground=?"
-            rows=self.conn.execute(q,(user_id,group_id,fishing_ground)).fetchall()
-        else:
-            rows=self.conn.execute(q,(user_id,group_id)).fetchall()
+            cq_params.append(fishing_ground)
+        rows=self.conn.execute(q,cq_params).fetchall()
         caught={r["fish_name"] for r in rows}
         self.close()
         for f in bf:
             f["obtained"]=f["name"] in caught
         return bf
+
+    def get_distinct_regions(self):
+        """获取所有不重复的区域列表"""
+        self.connect()
+        rows=self.conn.execute("SELECT DISTINCT region FROM fish_base ORDER BY region").fetchall()
+        self.close()
+        return [r["region"] for r in rows]
+
+    def get_distinct_grounds(self):
+        """获取所有不重复的钓场列表"""
+        self.connect()
+        rows=self.conn.execute("SELECT DISTINCT fishing_ground FROM fish_base ORDER BY fishing_ground").fetchall()
+        self.close()
+        return [r["fishing_ground"] for r in rows]
 
     def get_handbook_user_ranking(self,group_id,fish_name,user_id=None):
         """获取当前用户在某个鱼种的排行（按尺寸降序）"""

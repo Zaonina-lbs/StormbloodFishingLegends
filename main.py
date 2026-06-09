@@ -30,6 +30,8 @@ from .game_engine import (
     fish_handbook,
     fishing_log,
     leaderboard,
+    get_distinct_regions,
+    get_distinct_grounds,
 )
 
 # 热更新
@@ -249,22 +251,63 @@ class FishingPlugin(Star):
 
     @filter.command("鱼群图鉴")
     async def cmd_handbook(self, event: AstrMessageEvent):
-        """查看鱼群图鉴：/鱼群图鉴 [页码] [钓场]  或  /鱼群图鉴 [钓场]"""
+        """查看鱼群图鉴：/鱼群图鉴 [地区|钓场|页码] [页码]
+        用法：
+          /鱼群图鉴              → 全地区第1页
+          /鱼群图鉴 2            → 全地区第2页
+          /鱼群图鉴 红玉海       → 红玉海地区第1页
+          /鱼群图鉴 红玉海 2     → 红玉海地区第2页
+          /鱼群图鉴 白银水路     → 白银水路钓场第1页
+          /鱼群图鉴 白银水路 2   → 白银水路钓场第2页
+        """
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         args = parse_args(event.message_str)
-        page = args[1] if len(args) >= 2 else 1
-        fishing_ground = args[2] if len(args) >= 3 else None
-        # 智能识别：如果第一个参数不是纯数字，当作钓场名处理
-        if page is not None and page != 1:
+        # args[0] = "鱼群图鉴"
+        param1 = args[1] if len(args) >= 2 else None
+        param2 = args[2] if len(args) >= 3 else None
+
+        # 获取所有地区和钓场名称，用于智能匹配
+        regions = get_distinct_regions()
+        grounds = get_distinct_grounds()
+
+        region = None
+        fishing_ground = None
+        page = 1
+
+        if param1 is None:
+            # /鱼群图鉴 → 全地区第1页
+            pass
+        elif param2 is not None:
+            # 有2个参数: /鱼群图鉴 param1 param2
+            # param1 是地区或钓场，param2 是页码
+            if param1 in regions:
+                region = param1
+            elif param1 in grounds:
+                fishing_ground = param1
+            # param2 始终作为页码处理（如果不是数字会fallback到1）
             try:
-                int(str(page))
+                page = int(param2)
             except (ValueError, TypeError):
-                # 第一个参数是非数字 → 当作 fishing_ground
-                if fishing_ground is None:
-                    fishing_ground = page
                 page = 1
-        result = fish_handbook(user_id, group_id, page=page, fishing_ground=fishing_ground)
+        else:
+            # 只有1个参数: /鱼群图鉴 param1
+            # 判断是数字(页码)、地区还是钓场
+            try:
+                page = int(param1)
+                # 纯数字 → 全地区，页码=param1
+            except (ValueError, TypeError):
+                # 非数字 → 判断是地区还是钓场
+                if param1 in regions:
+                    region = param1
+                elif param1 in grounds:
+                    fishing_ground = param1
+                page = 1
+
+        if page < 1:
+            page = 1
+
+        result = fish_handbook(user_id, group_id, page=page, region=region, fishing_ground=fishing_ground)
         yield event.plain_result(result)
 
     @filter.command("钓鱼记录")

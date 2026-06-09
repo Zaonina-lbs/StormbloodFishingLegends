@@ -406,13 +406,36 @@ def _calculate_value(fish, size):
 def get_fish_help():
     return (
         "📋 FF14 钓鱼游戏命令\n"
-        "【账号】/钓鱼注册 /签到 /查看金币 /钓鱼帮助\n"
-        "【钓鱼】/钓鱼 [鱼饵] [钓场] [次数] /使用鱼饵 [饵] /查看天气 /鱼池版本\n"
-        "【背包】/查看背包 /查看鱼塘\n"
-        "【管理】/锁定 [id] /解锁 [id] /出售 [鱼名] /出售 id[N] /全部出售\n"
-        "【商店】/商城 /购买道具 [id] [数量] /氪金 [金币] /查看账单\n"
-        "【图鉴】/鱼群图鉴 [页码] [钓场] /钓鱼记录 [页] /排行榜 [鱼名] [大/小]\n"
-        "【管理】/热更新（管理员）"
+        "\n【账号】\n"
+        "  /钓鱼注册\n"
+        "  /签到\n"
+        "  /查看金币\n"
+        "  /钓鱼帮助\n"
+        "  /鱼池版本\n"
+        "\n【钓鱼】\n"
+        "  /钓鱼 [鱼饵] [钓场] [次数]\n"
+        "  /使用鱼饵 [饵]\n"
+        "  /查看天气\n"
+        "\n【背包】\n"
+        "  /查看背包\n"
+        "  /查看鱼塘\n"
+        "\n【管理】\n"
+        "  /锁定 [id]\n"
+        "  /解锁 [id]\n"
+        "  /出售 [鱼名]\n"
+        "  /出售 id[N]\n"
+        "  /全部出售\n"
+        "\n【商店】\n"
+        "  /商城\n"
+        "  /购买道具 [id] [数量]\n"
+        "  /氪金 [金币]\n"
+        "  /查看账单\n"
+        "\n【图鉴】\n"
+        "  /鱼群图鉴 [地区|钓场|页码] [页码]\n"
+        "  /钓鱼记录 [页]\n"
+        "  /排行榜 [鱼名] [大/小]\n"
+        "\n【管理】\n"
+        "  /热更新（管理员）"
     )
 
 
@@ -629,26 +652,23 @@ def view_krypton_log(user_id, group_id):
 
 # ==================== 图鉴与排行榜 ====================
 
-def fish_handbook(user_id, group_id, page=1, fishing_ground=None):
+def get_distinct_regions():
+    """获取所有不重复的区域列表"""
+    return _db.get_distinct_regions()
+
+def get_distinct_grounds():
+    """获取所有不重复的钓场列表"""
+    return _db.get_distinct_grounds()
+
+def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
     """鱼群图鉴 - 分页显示，每页10条
-    参数: user_id, group_id, page(默认1), fishing_ground(可选筛选项)
-    用法: /鱼群图鉴 [页码] [钓场]
+    参数: user_id, group_id, page(默认1), region(可选地区筛选), fishing_ground(可选钓场筛选)
+    用法: /鱼群图鉴 [地区|钓场|页码] [页码]
     """
     if not user_id:
         return "❌ 请提供 user_id"
     if not group_id:
         return "❌ 请提供 group_id（群号）"
-
-    # 参数智能识别：如果 fishing_ground 是纯数字，当作 page
-    try:
-        if fishing_ground is not None:
-            int(str(fishing_ground))
-            # fishing_ground looks like a number → swap
-            if page == 1:
-                page = int(fishing_ground)
-                fishing_ground = None
-    except (ValueError, TypeError):
-        pass
 
     try:
         page = int(page) if page else 1
@@ -657,7 +677,7 @@ def fish_handbook(user_id, group_id, page=1, fishing_ground=None):
     if page < 1:
         page = 1
 
-    handbook = _db.get_handbook(user_id, group_id, fishing_ground)
+    handbook = _db.get_handbook(user_id, group_id, region=region, fishing_ground=fishing_ground)
     if not handbook:
         return "📖 图鉴数据为空"
 
@@ -671,6 +691,8 @@ def fish_handbook(user_id, group_id, page=1, fishing_ground=None):
 
     # 构建图鉴标题
     title_parts = [f"📖 {user_id} 的鱼群图鉴"]
+    if region:
+        title_parts.append(f" [地区: {region}]")
     if fishing_ground:
         title_parts.append(f" [钓场: {fishing_ground}]")
     title_parts.append(f" （第 {page}/{total_pages} 页，共 {total} 种）")
@@ -688,23 +710,29 @@ def fish_handbook(user_id, group_id, page=1, fishing_ground=None):
             if rank:
                 rank_str = f" 🏅#{rank}"
 
-        region = fish.get("region", "未知")
+        rregion = fish.get("region", "未知")
         ground = fish.get("fishing_ground", "未知")
-        if region != current_region:
-            lines.append(f"\n  📍 {region}")
-            current_region = region
+        if rregion != current_region:
+            lines.append(f"\n  📍 {rregion}")
+            current_region = rregion
             current_ground = None
         if ground != current_ground:
             lines.append(f"    🎣 {ground}")
             current_ground = ground
 
-        lines.append(f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{rank_str}")
+        weather_str = ""
+        fish_weather = fish.get("weather", "")
+        if fish_weather:
+            weather_str = f" 🌤️{fish_weather}"
+        lines.append(f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{rank_str}{weather_str}")
 
     if page < total_pages:
+        next_cmd = f"/鱼群图鉴 {page+1}"
+        if region:
+            next_cmd += f" {region}"
         if fishing_ground:
-            lines.append(f"\n  下一页：/鱼群图鉴 {page+1} {fishing_ground}")
-        else:
-            lines.append(f"\n  下一页：/鱼群图鉴 {page+1}")
+            next_cmd += f" {fishing_ground}"
+        lines.append(f"\n  下一页：{next_cmd}")
     return "\n".join(lines)
 
 
