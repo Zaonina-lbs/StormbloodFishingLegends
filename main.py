@@ -6,7 +6,7 @@ from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 
 # 导入游戏引擎模块（所有游戏逻辑均为纯函数，无需异步包装）
-from game_engine import (
+from .game_engine import (
     init_engine,
     register_user,
     sign_in,
@@ -33,7 +33,7 @@ from game_engine import (
 )
 
 # 热更新
-import hot_reload
+from . import hot_reload
 
 # AstrBot 路径工具
 from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path

@@ -5,7 +5,7 @@
 
 import os
 import yaml
-from database import get_db
+from .database import get_db
 
 
 def load_yaml_config(filepath):
@@ -124,7 +124,7 @@ def do_reload(fish_file="fish_data.yaml", lure_file="lure_data.yaml", confirm=Fa
         db.reload_lure_data(new_lure_list)
 
     # 重新加载配置
-    import game_engine
+    from . import game_engine
     game_engine._reload_config()
 
     return True, "✅ 热更新完成！"

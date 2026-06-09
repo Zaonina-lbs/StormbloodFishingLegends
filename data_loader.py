@@ -5,7 +5,7 @@
 import openpyxl
 import os
 import yaml
-from database import get_db
+from .database import get_db
 
 
 def load_fish_data_from_excel(filepath="fish_data.xlsx"):

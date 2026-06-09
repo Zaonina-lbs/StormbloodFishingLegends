@@ -26,7 +26,7 @@ def _reload_config():
 
 def _init_db():
     global _db
-    from database import get_db
+    from .database import get_db
     if _db is None:
         _db = get_db(data_dir=_data_dir)
 
@@ -41,7 +41,7 @@ def init_engine(data_dir=None):
     global _data_dir, _db, _config
     _data_dir = data_dir
     _config = _load_config()
-    from database import init_db_with_path
+    from .database import init_db_with_path
     if data_dir:
         _db = init_db_with_path(None, data_dir=data_dir)
     else:
