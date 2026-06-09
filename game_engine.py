@@ -128,8 +128,8 @@ def sign_in(user_id, group_id):
     if last_sign == today:
         return "❌ 今日已签到，请明天再来！"
     roll = random.random()
-    gold_min = _config.get("sign_gold_min", 1000)
-    gold_max = _config.get("sign_gold_max", 2000)
+    gold_min = _config.get("sign_gold_min", 2500)
+    gold_max = _config.get("sign_gold_max", 4000)
     if roll < 0.5:
         gold = random.randint(gold_min, gold_max)
         _db.update_user_gold(user_id, group_id, gold)
