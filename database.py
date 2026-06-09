@@ -280,11 +280,13 @@ class Database:
         self.close()
         return fid
 
-    def get_pond(self,user_id,group_id):
+    def get_pond(self,user_id,group_id,page=1,page_size=10):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0 ORDER BY caught_time DESC",(user_id,group_id)).fetchall()
+        offset=(page-1)*page_size
+        rows=self.conn.execute("SELECT * FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0 ORDER BY caught_time DESC LIMIT ? OFFSET ?",(user_id,group_id,page_size,offset)).fetchall()
+        total=self.conn.execute("SELECT COUNT(*) as cnt FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0",(user_id,group_id)).fetchone()["cnt"]
         self.close()
-        return [dict(r) for r in rows]
+        return [dict(r) for r in rows],total
 
     def lock_fish(self,fish_id,user_id,group_id):
         self.connect()
@@ -473,7 +475,7 @@ class Database:
                         wmap[d]={}
                     wmap[d][slot]=self.generate_weather(d,slot)
                 wtype=wmap[d][slot]
-                label="上午" if slot==0 else "下午"
+                label="白天" if slot==0 else "晚上"
                 result.append({"date":d,"slot":slot,"label":f"{d} {label}","weather":wtype})
         return result
 

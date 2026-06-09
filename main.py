@@ -18,6 +18,9 @@ from .game_engine import (
     view_weather,
     view_inventory,
     view_fish_pond,
+    get_current_bait,
+    clear_bait,
+    view_fish_pool,
     lock_fish,
     unlock_fish,
     sell_fish_by_name,
@@ -150,11 +153,34 @@ class FishingPlugin(Star):
 
     @filter.command("查看鱼塘")
     async def cmd_fish_pond(self, event: AstrMessageEvent):
-        """查看钓上的鱼塘"""
+        """查看钓上的鱼塘：/查看鱼塘 [页码]"""
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
-        result = view_fish_pond(user_id, group_id)
+        args = parse_args(event.message_str)
+        page = args[1] if len(args) >= 2 else 1
+        result = view_fish_pond(user_id, group_id, page=page)
         yield event.plain_result(result)
+
+    @filter.command("查看当前鱼饵")
+    async def cmd_current_bait(self, event: AstrMessageEvent):
+        """查看当前默认鱼饵"""
+        user_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        result = get_current_bait(user_id, group_id)
+        yield event.plain_result(result)
+
+    @filter.command("不使用鱼饵")
+    async def cmd_clear_bait(self, event: AstrMessageEvent):
+        """恢复万能鱼饵"""
+        user_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        result = clear_bait(user_id, group_id)
+        yield event.plain_result(result)
+
+    @filter.command("当前鱼池")
+    async def cmd_fish_pool(self, event: AstrMessageEvent):
+        """查看当前天气下可钓的鱼"""
+        yield event.plain_result(view_fish_pool())
 
     @filter.command("锁定")
     async def cmd_lock(self, event: AstrMessageEvent):
@@ -194,6 +220,8 @@ class FishingPlugin(Star):
         if arg.lower().startswith("id"):
             fish_id_str = arg[2:].strip()
             result = sell_fish_by_id(user_id, group_id, fish_id_str)
+        elif arg.isdigit():
+            result = sell_fish_by_id(user_id, group_id, arg)
         else:
             result = sell_fish_by_name(user_id, group_id, arg)
         yield event.plain_result(result)
@@ -228,10 +256,7 @@ class FishingPlugin(Star):
 
     @filter.command("氪金")
     async def cmd_krypton(self, event: AstrMessageEvent):
-        """管理员氪金：/氪金 [金币]"""
-        if not event.is_admin():
-            yield event.plain_result("❌ 仅管理员可使用此命令")
-            return
+        """氪金添加金币：/氪金 [金币]"""
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         args = parse_args(event.message_str)

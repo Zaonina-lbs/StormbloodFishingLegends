@@ -210,6 +210,15 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
     if not user:
         return f"❌ 用户 {user_id} 在本群不存在，请先注册"
 
+    # 智能识别: 如果 bait_param 是纯数字，当作 count 处理
+    if bait_param is not None:
+        try:
+            int(bait_param)
+            count = bait_param
+            bait_param = None
+        except (ValueError, TypeError):
+            pass
+
     # 智能识别: 如果 fishing_ground 是数字，当作 count 处理
     if fishing_ground is not None:
         try:
@@ -229,6 +238,9 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
         return "❌ 单次最多钓鱼10次"
 
     effective_bait = bait_param or user.get("default_bait") or "万能鱼饵"
+    lines = [f"🎣 当前使用鱼饵：{effective_bait}"]
+    if count > 1:
+        lines.append(f"  连续钓鱼 {count} 次")
     results = []
     total_value = 0
     fish_counts = {}
@@ -260,10 +272,12 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
                 fish_counts[name] = fish_counts.get(name, 0) + 1
 
     if count == 1:
-        return results[0][4:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
+        single_result = results[0][4:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
+        return f"🎣 当前使用鱼饵：{effective_bait}\n{single_result}"
 
     # 汇总
-    lines = [f"🎣 连续钓鱼 {count} 次完成！"]
+    lines = [f"🎣 当前使用鱼饵：{effective_bait}"]
+    lines.append(f"  连续钓鱼 {count} 次完成！")
     for r in results:
         lines.append(r)
     lines.append(f"\n📊 总计价值：{total_value} G")
@@ -403,6 +417,54 @@ def _calculate_value(fish, size):
     return round(max(1, value))
 
 
+def get_current_bait(user_id, group_id):
+    """查看当前默认鱼饵"""
+    if not user_id:
+        return "❌ 请提供 user_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    user = _db.get_user(user_id, group_id)
+    if not user:
+        return f"❌ 用户 {user_id} 在本群不存在"
+    bait = user.get("default_bait") or "万能鱼饵"
+    return f"🎣 {user_id} 当前默认鱼饵：{bait}"
+
+def clear_bait(user_id, group_id):
+    """清除默认鱼饵，恢复万能鱼饵"""
+    if not user_id:
+        return "❌ 请提供 user_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    user = _db.get_user(user_id, group_id)
+    if not user:
+        return f"❌ 用户 {user_id} 在本群不存在"
+    _db.set_default_bait(user_id, group_id, "万能鱼饵")
+    return "✅ 已恢复使用万能鱼饵"
+
+def view_fish_pool():
+    """查看当前鱼池（当前天气下可钓的鱼），按鱼皇>鱼王>普通鱼排序"""
+    weather = _db.get_today_weather()
+    weather_type = weather["weather"]
+    all_fish = _db.get_all_fish()
+    pool = []
+    for f in all_fish:
+        if f["weather"] == "" or weather_type in f.get("weather", "").split("/"):
+            pool.append(f)
+    if not pool:
+        return "🐟 当前鱼池为空"
+    # 按鱼皇>鱼王>普通鱼排序
+    type_order = {"鱼皇": 0, "鱼王": 1, "普通鱼": 2}
+    pool.sort(key=lambda x: (type_order.get(x["fish_type"], 99), x["name"]))
+    lines = [f"🐟 当前鱼池（天气：{weather_type}，共 {len(pool)} 种）"]
+    current_type = None
+    for f in pool:
+        if f["fish_type"] != current_type:
+            current_type = f["fish_type"]
+            lines.append(f"\n  【{current_type}】")
+        bait_str = f.get("bait", "") or "通杀"
+        lines.append(f"    {f['name']} - {bait_str}")
+    return "\n".join(lines)
+
 def get_fish_help():
     return (
         "📋 FF14 钓鱼游戏命令\n"
@@ -415,15 +477,18 @@ def get_fish_help():
         "\n【钓鱼】\n"
         "  /钓鱼 [鱼饵] [钓场] [次数]\n"
         "  /使用鱼饵 [饵]\n"
+        "  /查看当前鱼饵\n"
+        "  /不使用鱼饵\n"
         "  /查看天气\n"
+        "  /当前鱼池\n"
         "\n【背包】\n"
         "  /查看背包\n"
-        "  /查看鱼塘\n"
+        "  /查看鱼塘 [页码]\n"
         "\n【管理】\n"
         "  /锁定 [id]\n"
         "  /解锁 [id]\n"
         "  /出售 [鱼名]\n"
-        "  /出售 id[N]\n"
+        "  /出售 [id]\n"
         "  /全部出售\n"
         "\n【商店】\n"
         "  /商城\n"
@@ -462,7 +527,7 @@ def view_inventory(user_id, group_id):
     return "\n".join(lines)
 
 
-def view_fish_pond(user_id, group_id):
+def view_fish_pond(user_id, group_id, page=1):
     if not user_id:
         return "❌ 请提供 user_id"
     if not group_id:
@@ -470,16 +535,27 @@ def view_fish_pond(user_id, group_id):
     user = _db.get_user(user_id, group_id)
     if not user:
         return f"❌ 用户 {user_id} 在本群不存在"
-    fish_list = _db.get_pond(user_id, group_id)
+    try:
+        page = int(page) if page else 1
+    except (ValueError, TypeError):
+        page = 1
+    if page < 1:
+        page = 1
+    page_size = 10
+    fish_list, total = _db.get_pond(user_id, group_id, page=page, page_size=page_size)
     if not fish_list:
         return "🐟 鱼塘为空"
-    lines = [f"🐟 {user_id} 的鱼塘（按日期倒序）"]
-    for f in fish_list[:30]:
-        lock_icon = "🔒" if f["locked"] else "🔓"
+    total_pages = (total + page_size - 1) // page_size
+    if page > total_pages:
+        page = total_pages
+        fish_list, _ = _db.get_pond(user_id, group_id, page=page, page_size=page_size)
+    lines = [f"🐟 {user_id} 的鱼塘（第 {page}/{total_pages} 页，共 {total} 条）"]
+    for f in fish_list:
+        lock_icon = "🔒" if f["locked"] else ""
         big_icon = "🐠" if f["is_big"] else "🐟"
-        lines.append(f"  [{f['id']}] {big_icon} {f['fish_name']} ({f['fish_type']}) {f['size']:.1f}cm 价值{int(f['value'])}G {lock_icon}")
-    if len(fish_list) > 30:
-        lines.append(f"  ... 共 {len(fish_list)} 条鱼")
+        lines.append(f"  [{f['id']}] {big_icon} {f['fish_name']} ({f['fish_type']}) {f['size']:.1f}cm 价值{int(f['value'])}G {lock_icon} 📅{f['caught_date']}")
+    if page < total_pages:
+        lines.append(f"\n  下一页：/查看鱼塘 {page+1}")
     return "\n".join(lines)
 
 
@@ -502,21 +578,41 @@ def lock_fish(user_id, group_id, fish_id):
 
 
 def unlock_fish(user_id, group_id, fish_id):
+    """解锁鱼，支持批量解锁: /解锁 1,2,3"""
     if not fish_id:
         return "❌ 请提供 fish_id"
     if not group_id:
         return "❌ 请提供 group_id（群号）"
-    try:
-        fish_id = int(fish_id)
-    except (ValueError, TypeError):
+    # 解析逗号分隔的ID列表
+    raw_ids = str(fish_id).replace("，", ",").split(",")
+    id_list = []
+    for rid in raw_ids:
+        rid = rid.strip()
+        try:
+            id_list.append(int(rid))
+        except (ValueError, TypeError):
+            pass
+    if not id_list:
         return "❌ fish_id 必须为数字"
-    fish = _db.get_caught_by_id(fish_id, user_id, group_id)
-    if not fish:
-        return f"❌ 未找到鱼 ID={fish_id}"
-    if not fish["locked"]:
-        return f"🔓 {fish['fish_name']} 已是解锁状态"
-    _db.unlock_fish(fish_id, user_id, group_id)
-    return f"🔓 {fish['fish_name']} 已解锁"
+    # 批量处理
+    unlocked = []
+    failed = []
+    for fid in id_list:
+        fish = _db.get_caught_by_id(fid, user_id, group_id)
+        if not fish:
+            failed.append(str(fid))
+        elif not fish["locked"]:
+            # 已解锁，但不报失败
+            unlocked.append(fish["fish_name"])
+        else:
+            _db.unlock_fish(fid, user_id, group_id)
+            unlocked.append(fish["fish_name"])
+    lines = []
+    if unlocked:
+        lines.append(f"🔓 已解锁：{', '.join(unlocked)}")
+    if failed:
+        lines.append(f"❌ 解锁失败：{', '.join(failed)}（ID不存在）")
+    return "\n".join(lines)
 
 
 # ==================== 交易与出售 ====================
@@ -779,3 +875,4 @@ def leaderboard(group_id, fish_name, size_order=None):
     for i, r in enumerate(rankings):
         medal = medals[i] if i < 3 else f"{i+1}."
         lines.append(f"  {medal} {r['user_id']} - {r['size']:.1f}cm")
+    return "\n".join(lines)
