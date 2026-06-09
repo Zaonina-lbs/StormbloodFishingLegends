@@ -1,0 +1,6 @@
+name: astrbot_plugin_StormbloodFishingLegends
+display_name: 红莲垂钓异闻
+desc: 以FF14中4.0版本的鱼池为底子做的一款群聊钓鱼小游戏。(只有4.0是因为鱼太多了，数据量庞大懒得收集.jpg)
+version: v1.0.0
+author: Zaonina
+repo: https://github.com/Zaonina-lbs/StormbloodFishingLegends.git

@@ -1,0 +1,2085 @@
+# 鱼基础数据配置文件
+# 可直接修改此文件，然后通过 hot_reload 热更新
+# bait 为空表示任何鱼饵都能上钩
+
+fishes:
+  - name: "公主青鳉"
+    region: "白银乡"
+    fishing_ground: "白银水路"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 4.8
+    min_big_size: 11.4
+    max_size: 12.1
+    base_value: 1500
+  - name: "盆栽鱼"
+    region: "白银乡"
+    fishing_ground: "白银水路"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 41
+  - name: "赌命河豚"
+    region: "白银乡"
+    fishing_ground: "白银乡"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 8.9
+    min_big_size: 21.0
+    max_size: 22.3
+    base_value: 1500
+  - name: "小珀琉喀斯"
+    region: "东拉诺西亚"
+    fishing_ground: "永夏岛北"
+    bait: "梭子鰆"
+    weather: "小雨/暴雨"
+    fish_type: "鱼王"
+    min_size: 70.8
+    min_big_size: 166.4
+    max_size: 177.0
+    base_value: 1500
+  - name: "巧儿海陆行鸟"
+    region: "东拉诺西亚"
+    fishing_ground: "永夏岛北"
+    bait: "梭子鰆"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.3
+    min_big_size: 10.1
+    max_size: 10.7
+    base_value: 41
+  - name: "青蓝之面"
+    region: "翻云雾海"
+    fishing_ground: "西方水泉"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.7
+    min_big_size: 25.1
+    max_size: 26.6
+    base_value: 20
+  - name: "春不知"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 7.0
+    min_big_size: 16.6
+    max_size: 17.6
+    base_value: 1500
+  - name: "迎春鱼"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.1
+    min_big_size: 12.1
+    max_size: 12.8
+    base_value: 92
+  - name: "东洲蝴蝶鱼"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.3
+    min_big_size: 12.5
+    max_size: 13.2
+    base_value: 92
+  - name: "红玉珊瑚"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.0
+    min_big_size: 23.5
+    max_size: 25.0
+    base_value: 20
+  - name: "苍玉珊瑚"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.0
+    min_big_size: 23.5
+    max_size: 25.0
+    base_value: 20
+  - name: "白骨珊瑚"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.0
+    min_big_size: 23.5
+    max_size: 25.0
+    base_value: 20
+  - name: "红玉海藻"
+    region: "红玉海"
+    fishing_ground: "冲之岩近海"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "七星"
+    region: "红玉海"
+    fishing_ground: "龟甲岛近海"
+    bait: "蓝矶沙蚕"
+    weather: "打雷/晴朗"
+    fish_type: "鱼王"
+    min_size: 102.3
+    min_big_size: 240.5
+    max_size: 255.8
+    base_value: 1500
+  - name: "薄毯章鱼"
+    region: "红玉海"
+    fishing_ground: "龟甲岛近海"
+    bait: "活虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 55.1
+    min_big_size: 129.4
+    max_size: 137.6
+    base_value: 20
+  - name: "大天竺鱼"
+    region: "红玉海"
+    fishing_ground: "龟甲岛近海"
+    bait: "蓝矶沙蚕"
+    weather: "碧空"
+    fish_type: "普通鱼"
+    min_size: 50.3
+    min_big_size: 118.3
+    max_size: 125.8
+    base_value: 61
+  - name: "鱼大夫"
+    region: "红玉海"
+    fishing_ground: "龟甲岛近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 39.2
+    min_big_size: 92.1
+    max_size: 97.9
+    base_value: 20
+  - name: "苦尔鳗"
+    region: "红玉海"
+    fishing_ground: "红玉炮台近海"
+    bait: "蓝矶沙蚕"
+    weather: "打雷/阴云"
+    fish_type: "鱼王"
+    min_size: 47.1
+    min_big_size: 110.8
+    max_size: 117.8
+    base_value: 1500
+  - name: "红龙"
+    region: "红玉海"
+    fishing_ground: "红玉炮台近海"
+    bait: "苦尔鳗"
+    weather: "打雷/阴云"
+    fish_type: "鱼皇"
+    min_size: 236.2
+    min_big_size: 555.0
+    max_size: 590.4
+    base_value: 25000
+  - name: "黑斑花蛇鳗"
+    region: "红玉海"
+    fishing_ground: "红玉炮台近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 15.7
+    min_big_size: 36.9
+    max_size: 39.2
+    base_value: 123
+  - name: "琉璃鲱"
+    region: "红玉海"
+    fishing_ground: "红玉炮台近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.1
+    min_big_size: 12.1
+    max_size: 12.8
+    base_value: 20
+  - name: "珊瑚海马"
+    region: "红玉海"
+    fishing_ground: "红玉炮台近海"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.3
+    min_big_size: 7.7
+    max_size: 8.1
+    base_value: 20
+  - name: "毯子章鱼"
+    region: "红玉海"
+    fishing_ground: "绝鬼岛近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 59.8
+    min_big_size: 140.6
+    max_size: 149.5
+    base_value: 20
+  - name: "赤点石斑鱼"
+    region: "红玉海"
+    fishing_ground: "绝鬼岛近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 122
+  - name: "速疾鬼鳄"
+    region: "红玉海"
+    fishing_ground: "绝鬼岛近海"
+    bait: "红玉虾"
+    weather: "打雷"
+    fish_type: "鱼王"
+    min_size: 193.7
+    min_big_size: 455.1
+    max_size: 484.1
+    base_value: 1500
+  - name: "绝鬼鳄"
+    region: "红玉海"
+    fishing_ground: "绝鬼岛近海"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 72.4
+    min_big_size: 170.2
+    max_size: 181.0
+    base_value: 163
+  - name: "大王乌贼"
+    region: "红玉海"
+    fishing_ground: "绝鬼岛近海"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 47.0
+    min_big_size: 110.6
+    max_size: 117.6
+    base_value: 163
+  - name: "万刺鲀"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "活虾"
+    weather: "碧空/晴朗/打雷"
+    fish_type: "鱼王"
+    min_size: 29.7
+    min_big_size: 69.9
+    max_size: 74.3
+    base_value: 1500
+  - name: "白姑鱼"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 23.6
+    min_big_size: 55.4
+    max_size: 58.9
+    base_value: 153
+  - name: "滑翔鱼"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 20
+  - name: "刺鲀"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 19.5
+    min_big_size: 45.8
+    max_size: 48.7
+    base_value: 20
+  - name: "圆扇贝"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 33.0
+    min_big_size: 77.6
+    max_size: 82.5
+    base_value: 153
+  - name: "仿麻鱼"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.3
+    min_big_size: 5.5
+    max_size: 5.8
+    base_value: 153
+  - name: "白银贝"
+    region: "红玉海"
+    fishing_ground: "渔村沿岸"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.0
+    min_big_size: 11.7
+    max_size: 12.4
+    base_value: 20
+  - name: "浮木鱼"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "蓝矶沙蚕"
+    weather: "微风"
+    fish_type: "普通鱼"
+    min_size: 46.4
+    min_big_size: 109.1
+    max_size: 116.0
+    base_value: 153
+  - name: "狱卒鮟鱇"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 23.6
+    min_big_size: 55.4
+    max_size: 58.9
+    base_value: 20
+  - name: "鳍龙"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "红玉虾"
+    weather: "打雷"
+    fish_type: "普通鱼"
+    min_size: 188.9
+    min_big_size: 444.0
+    max_size: 472.3
+    base_value: 163
+  - name: "菜食王"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "红玉虾"
+    weather: "打雷"
+    fish_type: "鱼王"
+    min_size: 220.4
+    min_big_size: 518.0
+    max_size: 551.0
+    base_value: 1500
+  - name: "地狱水母"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.4
+    min_big_size: 10.3
+    max_size: 10.9
+    base_value: 153
+  - name: "石头鱼"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 66.1
+    min_big_size: 155.3
+    max_size: 165.2
+    base_value: 163
+  - name: "尖叫者"
+    region: "红玉海"
+    fishing_ground: "狱之盖近海"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 105.5
+    min_big_size: 247.8
+    max_size: 263.6
+    base_value: 163
+  - name: "剑旗鱼"
+    region: "红玉海"
+    fishing_ground: "自凝岛近海"
+    bait: "蓝矶沙蚕"
+    weather: "阴云/微风"
+    fish_type: "普通鱼"
+    min_size: 45.6
+    min_big_size: 107.2
+    max_size: 114.0
+    base_value: 61
+  - name: "琉璃鲽鱼"
+    region: "红玉海"
+    fishing_ground: "自凝岛近海"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.5
+    min_big_size: 12.8
+    max_size: 13.6
+    base_value: 20
+  - name: "大海蛇"
+    region: "红玉海"
+    fishing_ground: "自凝岛近海"
+    bait: "红玉虾"
+    weather: "碧空/晴朗/微风"
+    fish_type: "鱼王"
+    min_size: 47.1
+    min_big_size: 110.8
+    max_size: 117.8
+    base_value: 1500
+  - name: "扇贝海蛇"
+    region: "红玉海"
+    fishing_ground: "自凝岛近海"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 15.7
+    min_big_size: 36.9
+    max_size: 39.2
+    base_value: 163
+  - name: "木叶龙"
+    region: "红玉海"
+    fishing_ground: "自凝岛近海"
+    bait: "活虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 13.8
+    min_big_size: 32.5
+    max_size: 34.5
+    base_value: 20
+  - name: "琉璃金枪鱼"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "蓝矶沙蚕"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 27.7
+    min_big_size: 65.0
+    max_size: 69.1
+    base_value: 215
+  - name: "虎纹河豚"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "蔓菁拟饵"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 8.6
+    min_big_size: 20.3
+    max_size: 21.5
+    base_value: 20
+  - name: "花海马"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 39.3
+    min_big_size: 92.4
+    max_size: 98.3
+    base_value: 245
+  - name: "鳀鱼"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.3
+    min_big_size: 7.7
+    max_size: 8.1
+    base_value: 20
+  - name: "红玉虾"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.4
+    min_big_size: 8.0
+    max_size: 8.5
+    base_value: 20
+  - name: "花须鯙"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 15.9
+    min_big_size: 37.3
+    max_size: 39.6
+    base_value: 245
+  - name: "花海龙"
+    region: "黄金港"
+    fishing_ground: "防波堤"
+    bait: "红玉虾"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 41.7
+    min_big_size: 98.0
+    max_size: 104.2
+    base_value: 1500
+  - name: "幻河鲯"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 47.9
+    min_big_size: 112.6
+    max_size: 119.7
+    base_value: 245
+  - name: "骸鲢鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "悬浮诱饵鱼"
+    weather: "碧空"
+    fish_type: "鱼王"
+    min_size: 15.6
+    min_big_size: 36.6
+    max_size: 38.9
+    base_value: 1500
+  - name: "拉尔戈落雷"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "鲑鱼籽"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 34.6
+    min_big_size: 81.4
+    max_size: 86.5
+    base_value: 20
+  - name: "高地刺鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 37.6
+    min_big_size: 88.3
+    max_size: 93.9
+    base_value: 245
+  - name: "幻象鲢鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.8
+    min_big_size: 18.4
+    max_size: 19.5
+    base_value: 245
+  - name: "砂砾鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "幻河"
+    bait: "鲑鱼籽"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "蓝宝石扇鳉"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "嗡嗡石蝇"
+    weather: "打雷"
+    fish_type: "鱼王"
+    min_size: 4.3
+    min_big_size: 10.1
+    max_size: 10.7
+    base_value: 1500
+  - name: "幽灵鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "嗡嗡石蝇"
+    weather: "薄雾"
+    fish_type: "普通鱼"
+    min_size: 9.9
+    min_big_size: 23.3
+    max_size: 24.7
+    base_value: 204
+  - name: "角尊鳅"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 1.5
+    min_big_size: 3.6
+    max_size: 3.8
+    base_value: 204
+  - name: "脉轮鲶"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.7
+    min_big_size: 25.1
+    max_size: 26.6
+    base_value: 20
+  - name: "洞穴鳉"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.6
+    min_big_size: 8.4
+    max_size: 8.9
+    base_value: 245
+  - name: "溶骨蜗牛"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 6.1
+    min_big_size: 14.3
+    max_size: 15.2
+    base_value: 245
+  - name: "落叶鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "昏暗林"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.8
+    min_big_size: 9.0
+    max_size: 9.5
+    base_value: 204
+  - name: "教皇鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 12.2
+    min_big_size: 28.8
+    max_size: 30.6
+    base_value: 1500
+  - name: "枢机鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 327
+  - name: "涅槃蟹"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 10.2
+    min_big_size: 23.9
+    max_size: 25.4
+    base_value: 327
+  - name: "释法来豹鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 32.2
+    min_big_size: 75.8
+    max_size: 80.6
+    base_value: 20
+  - name: "小流星"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 4.0
+    min_big_size: 9.5
+    max_size: 10.1
+    base_value: 327
+  - name: "倾仰鲶鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "流星尾"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.2
+    min_big_size: 17.0
+    max_size: 18.0
+    base_value: 327
+  - name: "硬头鳟"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "提蒙河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 15.6
+    min_big_size: 36.7
+    max_size: 39.0
+    base_value: 1500
+  - name: "异刺鲨"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "提蒙河"
+    bait: "硬头鳟"
+    weather: ""
+    fish_type: "鱼皇"
+    min_size: 122.8
+    min_big_size: 288.5
+    max_size: 306.9
+    base_value: 25000
+  - name: "头铁鳟"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "提蒙河"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 12.5
+    min_big_size: 29.5
+    max_size: 31.3
+    base_value: 327
+  - name: "死亡鳅"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "提蒙河"
+    bait: "赤虫"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.6
+    min_big_size: 8.4
+    max_size: 8.9
+    base_value: 20
+  - name: "基拉巴尼亚鲢鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "提蒙河"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.3
+    min_big_size: 7.7
+    max_size: 8.1
+    base_value: 20
+  - name: "下游鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "威罗迪纳河"
+    bait: "嗡嗡石蝇"
+    weather: "薄雾"
+    fish_type: "鱼王"
+    min_size: 15.3
+    min_big_size: 36.0
+    max_size: 38.2
+    base_value: 1500
+  - name: "谷爬鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "威罗迪纳河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.8
+    min_big_size: 18.4
+    max_size: 19.5
+    base_value: 204
+  - name: "威罗迪纳草鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "威罗迪纳河"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 31.4
+    min_big_size: 73.9
+    max_size: 78.6
+    base_value: 327
+  - name: "威罗迪纳黑鲤"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "威罗迪纳河"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.7
+    min_big_size: 11.0
+    max_size: 11.7
+    base_value: 327
+  - name: "威罗迪纳鲑鱼"
+    region: "基拉巴尼亚边区"
+    fishing_ground: "威罗迪纳河"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 37.9
+    min_big_size: 89.1
+    max_size: 94.7
+    base_value: 20
+  - name: "盐盾"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "蚕蛹"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 65.0
+    min_big_size: 152.7
+    max_size: 162.4
+    base_value: 20
+  - name: "盐磨鲨"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "岩盐咸鱼"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 79.5
+    min_big_size: 186.8
+    max_size: 198.7
+    base_value: 344
+  - name: "钻石眼"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "岩盐咸鱼"
+    weather: "碧空"
+    fish_type: "鱼王"
+    min_size: 65.3
+    min_big_size: 153.5
+    max_size: 163.2
+    base_value: 1500
+  - name: "雕塑家"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "岩盐咸鱼"
+    weather: "雷雨"
+    fish_type: "普通鱼"
+    min_size: 78.5
+    min_big_size: 184.6
+    max_size: 196.3
+    base_value: 344
+  - name: "胸脊鲨"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "岩盐咸鱼"
+    weather: ""
+    fish_type: "鱼皇"
+    min_size: 107.0
+    min_big_size: 251.6
+    max_size: 267.6
+    base_value: 25000
+  - name: "岩盐咸鱼"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "蚕蛹"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.1
+    min_big_size: 7.3
+    max_size: 7.7
+    base_value: 20
+  - name: "珍珠眼"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "岩盐咸鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 32.2
+    min_big_size: 75.8
+    max_size: 80.6
+    base_value: 344
+  - name: "白马"
+    region: "基拉巴尼亚湖区"
+    fishing_ground: "盐湖"
+    bait: "蚕蛹"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.5
+    min_big_size: 12.8
+    max_size: 13.6
+    base_value: 20
+  - name: "怨妇虾"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "夫妇池"
+    bait: "悬浮诱饵鱼"
+    weather: "扬沙"
+    fish_type: "鱼王"
+    min_size: 11.3
+    min_big_size: 26.5
+    max_size: 28.1
+    base_value: 1500
+  - name: "镰甲鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "夫妇池"
+    bait: "悬浮诱饵鱼"
+    weather: "扬沙"
+    fish_type: "鱼皇"
+    min_size: 39.3
+    min_big_size: 92.4
+    max_size: 98.3
+    base_value: 25000
+  - name: "康复鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "夫妇池"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.7
+    min_big_size: 22.9
+    max_size: 24.3
+    base_value: 20
+  - name: "夫蟹"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "夫妇池"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.0
+    min_big_size: 11.7
+    max_size: 12.4
+    base_value: 327
+  - name: "妇虾"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "夫妇池"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.2
+    min_big_size: 23.9
+    max_size: 25.4
+    base_value: 327
+  - name: "不定鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "慢水涤"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 24.6
+    min_big_size: 57.8
+    max_size: 61.4
+    base_value: 1500
+  - name: "暗缟虾虎"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "慢水涤"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 14.9
+    min_big_size: 35.1
+    max_size: 37.3
+    base_value: 20
+  - name: "石楠嘉鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "慢水涤"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.4
+    min_big_size: 8.0
+    max_size: 8.5
+    base_value: 204
+  - name: "逆流鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "慢水涤"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 15.7
+    min_big_size: 36.9
+    max_size: 39.2
+    base_value: 20
+  - name: "素面蝲蛄"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "慢水涤"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.4
+    min_big_size: 8.0
+    max_size: 8.5
+    base_value: 20
+  - name: "黑蒙鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "猛牛浴池"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云"
+    fish_type: "鱼王"
+    min_size: 8.5
+    min_big_size: 19.9
+    max_size: 21.1
+    base_value: 1500
+  - name: "猛牛口食"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "猛牛浴池"
+    bait: "赤虫"
+    weather: "阴云/薄雾/微风/扬沙"
+    fish_type: "普通鱼"
+    min_size: 14.9
+    min_big_size: 35.1
+    max_size: 37.3
+    base_value: 20
+  - name: "鳄龟"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "猛牛浴池"
+    bait: "悬浮诱饵鱼"
+    weather: "碧空/晴朗"
+    fish_type: "普通鱼"
+    min_size: 33.0
+    min_big_size: 77.6
+    max_size: 82.5
+    base_value: 327
+  - name: "窥视鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "猛牛浴池"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.2
+    min_big_size: 17.0
+    max_size: 18.0
+    base_value: 327
+  - name: "裁定鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "判官神像"
+    bait: "嗡嗡石蝇"
+    weather: "微风"
+    fish_type: "普通鱼"
+    min_size: 37.7
+    min_big_size: 88.7
+    max_size: 94.3
+    base_value: 204
+  - name: "解脱鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "判官神像"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云/薄雾/微风/扬沙/碧空"
+    fish_type: "鱼王"
+    min_size: 70.3
+    min_big_size: 165.3
+    max_size: 175.8
+    base_value: 1500
+  - name: "冥想鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "判官神像"
+    bait: "嗡嗡石蝇"
+    weather: "阴云/薄雾/微风/扬沙"
+    fish_type: "普通鱼"
+    min_size: 24.2
+    min_big_size: 56.9
+    max_size: 60.5
+    base_value: 204
+  - name: "高山骨舌鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "判官神像"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 16.5
+    min_big_size: 38.8
+    max_size: 41.2
+    base_value: 204
+  - name: "最后一滴泪"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "石楠瀑布"
+    bait: "鲑鱼籽"
+    weather: "薄雾/晴朗"
+    fish_type: "鱼王"
+    min_size: 24.3
+    min_big_size: 57.1
+    max_size: 60.7
+    base_value: 1500
+  - name: "精金多鳍鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "石楠瀑布"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 28.3
+    min_big_size: 66.5
+    max_size: 70.7
+    base_value: 327
+  - name: "紫圆盾"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "石楠瀑布"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.2
+    min_big_size: 23.9
+    max_size: 25.4
+    base_value: 20
+  - name: "白钢鲨"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "石楠瀑布"
+    bait: "嗡嗡石蝇"
+    weather: "碧空"
+    fish_type: "普通鱼"
+    min_size: 4.7
+    min_big_size: 11.0
+    max_size: 11.7
+    base_value: 204
+  - name: "阿巴拉提亚蝾螈"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "石楠瀑布"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.5
+    min_big_size: 5.8
+    max_size: 6.1
+    base_value: 327
+  - name: "东方刺鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "悬浮诱饵鱼"
+    weather: "碧空/晴朗"
+    fish_type: "普通鱼"
+    min_size: 23.6
+    min_big_size: 55.4
+    max_size: 58.9
+    base_value: 327
+  - name: "阿拉米格面纱鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "悬浮诱饵鱼"
+    weather: "碧空/晴朗"
+    fish_type: "鱼王"
+    min_size: 3.6
+    min_big_size: 8.4
+    max_size: 8.9
+    base_value: 1500
+  - name: "弯刀鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 17.4
+    min_big_size: 41.0
+    max_size: 43.6
+    base_value: 233
+  - name: "基迦鲈"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 17.3
+    min_big_size: 40.7
+    max_size: 43.2
+    base_value: 233
+  - name: "岩石鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "悬浮诱饵鱼"
+    weather: "阴云/薄雾/微风/扬沙"
+    fish_type: "普通鱼"
+    min_size: 5.0
+    min_big_size: 11.7
+    max_size: 12.4
+    base_value: 327
+  - name: "阿拉米格缎带鱼"
+    region: "基拉巴尼亚山区"
+    fishing_ground: "赎罪之腕"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 1.9
+    min_big_size: 4.6
+    max_size: 4.8
+    base_value: 204
+  - name: "北境生蚝"
+    region: "库尔札斯西部高地"
+    fishing_ground: "灰烬池"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.3
+    min_big_size: 7.7
+    max_size: 8.1
+    base_value: 20
+  - name: "热鳍鱼"
+    region: "库尔札斯西部高地"
+    fishing_ground: "灾祸池西"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 23.9
+    min_big_size: 56.2
+    max_size: 59.7
+    base_value: 20
+  - name: "缪恩鱼"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "基拉巴尼亚鳟"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 15.5
+    min_big_size: 36.5
+    max_size: 38.8
+    base_value: 233
+  - name: "基拉巴尼亚鳟"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "赤虫"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "吞钩苦鱼"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 2.3
+    min_big_size: 5.5
+    max_size: 5.8
+    base_value: 1500
+  - name: "阿巴拉提亚苦鱼"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 1.5
+    min_big_size: 3.6
+    max_size: 3.8
+    base_value: 20
+  - name: "破损蟹"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 327
+  - name: "唾血龙虾"
+    region: "神拳痕"
+    fishing_ground: "幻河上游"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.0
+    min_big_size: 16.6
+    max_size: 17.6
+    base_value: 20
+  - name: "拉尔戈鲶鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "基拉巴尼亚鳟"
+    weather: "打雷"
+    fish_type: "鱼王"
+    min_size: 17.0
+    min_big_size: 39.9
+    max_size: 42.4
+    base_value: 1500
+  - name: "武斗鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.8
+    min_big_size: 18.4
+    max_size: 19.5
+    base_value: 280
+  - name: "电鲶鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 12.2
+    min_big_size: 28.8
+    max_size: 30.6
+    base_value: 20
+  - name: "非信仰巨骨舌鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "基拉巴尼亚鳟"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 42.5
+    min_big_size: 99.8
+    max_size: 106.1
+    base_value: 280
+  - name: "金丽鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.2
+    min_big_size: 5.1
+    max_size: 5.4
+    base_value: 204
+  - name: "寺院鲫鱼"
+    region: "神拳痕"
+    fishing_ground: "神拳痕"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.3
+    min_big_size: 12.5
+    max_size: 13.2
+    base_value: 204
+  - name: "彗星鲦"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.1
+    min_big_size: 7.3
+    max_size: 7.7
+    base_value: 20
+  - name: "红尾鲶"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "气球蛙"
+    weather: "阴云/薄雾"
+    fish_type: "普通鱼"
+    min_size: 38.5
+    min_big_size: 90.6
+    max_size: 96.3
+    base_value: 86
+  - name: "红尾僵尸鱼"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "气球蛙"
+    weather: "阴云/薄雾"
+    fish_type: "鱼王"
+    min_size: 42.9
+    min_big_size: 100.9
+    max_size: 107.3
+    base_value: 1500
+  - name: "银币鱼"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 6.6
+    min_big_size: 15.5
+    max_size: 16.4
+    base_value: 20
+  - name: "气球蛙"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 5.0
+    min_big_size: 11.7
+    max_size: 12.4
+    base_value: 20
+  - name: "灯笼球藻"
+    region: "神拳痕"
+    fishing_ground: "星导寺入口"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.0
+    min_big_size: 9.5
+    max_size: 10.1
+    base_value: 327
+  - name: "月神的爱宠"
+    region: "太阳神草原"
+    fishing_ground: "朵塔儿水洲"
+    bait: "悬浮诱饵鱼"
+    weather: "小雨/碧空/晴朗"
+    fish_type: "鱼王"
+    min_size: 18.8
+    min_big_size: 44.3
+    max_size: 47.1
+    base_value: 1500
+  - name: "众神之爱"
+    region: "太阳神草原"
+    fishing_ground: "朵塔儿水洲"
+    bait: "嗡嗡石蝇"
+    weather: "小雨/碧空"
+    fish_type: "鱼皇"
+    min_size: 1.1
+    min_big_size: 2.5
+    max_size: 2.6
+    base_value: 25000
+  - name: "月神恩惠"
+    region: "太阳神草原"
+    fishing_ground: "朵塔儿水洲"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 11.0
+    min_big_size: 25.8
+    max_size: 27.4
+    base_value: 204
+  - name: "黄铜鱼"
+    region: "太阳神草原"
+    fishing_ground: "朵塔儿水洲"
+    bait: "鲑鱼籽"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.7
+    min_big_size: 11.0
+    max_size: 11.7
+    base_value: 20
+  - name: "哈克苦鱼"
+    region: "太阳神草原"
+    fishing_ground: "哈克卡勒河"
+    bait: "嗡嗡石蝇"
+    weather: "小雨"
+    fish_type: "普通鱼"
+    min_size: 1.7
+    min_big_size: 4.0
+    max_size: 4.2
+    base_value: 204
+  - name: "晨曦旗鱼"
+    region: "太阳神草原"
+    fishing_ground: "哈克卡勒河"
+    bait: "嘎牙子"
+    weather: "晴朗/阴云/薄雾/微风"
+    fish_type: "鱼王"
+    min_size: 27.2
+    min_big_size: 64.0
+    max_size: 68.0
+    base_value: 1500
+  - name: "枯草跳鱼"
+    region: "太阳神草原"
+    fishing_ground: "哈克卡勒河"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.8
+    min_big_size: 11.4
+    max_size: 12.1
+    base_value: 327
+  - name: "暮晖蝲蛄"
+    region: "太阳神草原"
+    fishing_ground: "哈克卡勒河"
+    bait: "鲑鱼籽"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.0
+    min_big_size: 9.5
+    max_size: 10.1
+    base_value: 20
+  - name: "天幕鱼"
+    region: "太阳神草原"
+    fishing_ground: "哈克卡勒河"
+    bait: "嘎牙子"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 18.2
+    min_big_size: 42.8
+    max_size: 45.5
+    base_value: 245
+  - name: "菜叶跳鱼"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "赤虫"
+    weather: "晴朗/碧空"
+    fish_type: "鱼王"
+    min_size: 7.5
+    min_big_size: 17.6
+    max_size: 18.7
+    base_value: 1500
+  - name: "东洲鳟"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "鲑鱼籽"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 8.5
+    min_big_size: 19.9
+    max_size: 21.1
+    base_value: 20
+  - name: "青鳉"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "赤虫"
+    weather: "碧空"
+    fish_type: "普通鱼"
+    min_size: 0.5
+    min_big_size: 1.2
+    max_size: 1.2
+    base_value: 61
+  - name: "嘎牙子"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "肥蚯蚓"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "草跳鱼"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.4
+    min_big_size: 10.3
+    max_size: 10.9
+    base_value: 20
+  - name: "晨曦蝲蛄"
+    region: "太阳神草原"
+    fishing_ground: "涅木卡勒河"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 4.0
+    min_big_size: 9.5
+    max_size: 10.1
+    base_value: 20
+  - name: "神谕苦鱼"
+    region: "太阳神草原"
+    fishing_ground: "塔奥卡勒河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 3.6
+    min_big_size: 8.5
+    max_size: 9.0
+    base_value: 1500
+  - name: "弓鱼"
+    region: "太阳神草原"
+    fishing_ground: "塔奥卡勒河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 17.4
+    min_big_size: 41.0
+    max_size: 43.6
+    base_value: 204
+  - name: "河中长老"
+    region: "太阳神草原"
+    fishing_ground: "塔奥卡勒河"
+    bait: "嘎牙子"
+    weather: "阴云/薄雾/微风"
+    fish_type: "普通鱼"
+    min_size: 17.6
+    min_big_size: 41.3
+    max_size: 43.9
+    base_value: 245
+  - name: "塔奥苦鱼"
+    region: "太阳神草原"
+    fishing_ground: "塔奥卡勒河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.3
+    min_big_size: 5.5
+    max_size: 5.8
+    base_value: 204
+  - name: "太阳鲈"
+    region: "太阳神草原"
+    fishing_ground: "太阳湖"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 24.4
+    min_big_size: 57.3
+    max_size: 60.9
+    base_value: 327
+  - name: "硬鳞鱼"
+    region: "太阳神草原"
+    fishing_ground: "太阳湖"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 28.3
+    min_big_size: 66.5
+    max_size: 70.7
+    base_value: 327
+  - name: "虹鳉"
+    region: "太阳神草原"
+    fishing_ground: "太阳湖"
+    bait: "嗡嗡石蝇"
+    weather: "碧空/晴朗"
+    fish_type: "普通鱼"
+    min_size: 0.7
+    min_big_size: 1.6
+    max_size: 1.6
+    base_value: 204
+  - name: "暮晖鱼"
+    region: "太阳神草原"
+    fishing_ground: "太阳湖"
+    bait: "嘎牙子"
+    weather: "强风/小雨/阴云"
+    fish_type: "鱼王"
+    min_size: 56.6
+    min_big_size: 133.1
+    max_size: 141.6
+    base_value: 1500
+  - name: "汗鱼"
+    region: "太阳神草原"
+    fishing_ground: "太阳湖"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.3
+    min_big_size: 5.5
+    max_size: 5.8
+    base_value: 204
+  - name: "刀片跳鱼"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河上游"
+    bait: "悬浮诱饵鱼"
+    weather: "薄雾"
+    fish_type: "鱼王"
+    min_size: 7.4
+    min_big_size: 17.3
+    max_size: 18.4
+    base_value: 1500
+  - name: "红翅鱼"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河上游"
+    bait: "嘎牙子"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 0.6
+    min_big_size: 1.4
+    max_size: 1.4
+    base_value: 245
+  - name: "青空泪"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河上游"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.6
+    min_big_size: 8.4
+    max_size: 8.9
+    base_value: 327
+  - name: "亚特可汗"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河下游"
+    bait: "嗡嗡石蝇"
+    weather: "微风"
+    fish_type: "鱼王"
+    min_size: 3.9
+    min_big_size: 9.3
+    max_size: 9.8
+    base_value: 1500
+  - name: "亚特虾虎"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河下游"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 0.7
+    min_big_size: 1.7
+    max_size: 1.8
+    base_value: 204
+  - name: "翡翠河鹿鱼"
+    region: "太阳神草原"
+    fishing_ground: "亚特卡勒河下游"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.0
+    min_big_size: 16.6
+    max_size: 17.6
+    base_value: 327
+  - name: "石榴海"
+    region: "延夏"
+    fishing_ground: "苍鹭池"
+    bait: "肥蚯蚓"
+    weather: "小雨"
+    fish_type: "鱼王"
+    min_size: 7.5
+    min_big_size: 17.6
+    max_size: 18.7
+    base_value: 1500
+  - name: "多玛鳟"
+    region: "延夏"
+    fishing_ground: "苍鹭池"
+    bait: "天钢之球"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "多玛蝲蛄"
+    region: "延夏"
+    fishing_ground: "苍鹭池"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.8
+    min_big_size: 6.5
+    max_size: 6.9
+    base_value: 204
+  - name: "恋心球藻"
+    region: "延夏"
+    fishing_ground: "苍鹭池"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 20
+  - name: "鬼视"
+    region: "延夏"
+    fishing_ground: "苍鹭河"
+    bait: "悬浮诱饵鱼"
+    weather: "晴朗/碧空"
+    fish_type: "鱼王"
+    min_size: 10.7
+    min_big_size: 25.1
+    max_size: 26.6
+    base_value: 1500
+  - name: "河红眼鲈"
+    region: "延夏"
+    fishing_ground: "苍鹭河"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 6.2
+    min_big_size: 14.7
+    max_size: 15.6
+    base_value: 204
+  - name: "无二草鱼"
+    region: "延夏"
+    fishing_ground: "城下码头"
+    bait: "赤虫"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 31.4
+    min_big_size: 73.9
+    max_size: 78.6
+    base_value: 20
+  - name: "水天一碧"
+    region: "延夏"
+    fishing_ground: "城下码头"
+    bait: "嗡嗡石蝇"
+    weather: "暴雨"
+    fish_type: "鱼王"
+    min_size: 15.4
+    min_big_size: 36.1
+    max_size: 38.4
+    base_value: 1500
+  - name: "王室鲑"
+    region: "延夏"
+    fishing_ground: "城下码头"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.0
+    min_big_size: 16.6
+    max_size: 17.6
+    base_value: 204
+  - name: "东洲巨骨舌鱼"
+    region: "延夏"
+    fishing_ground: "城下码头"
+    bait: "天钢之球"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 42.5
+    min_big_size: 99.8
+    max_size: 106.1
+    base_value: 20
+  - name: "仙寿翁"
+    region: "延夏"
+    fishing_ground: "茨菰村水塘"
+    bait: "嗡嗡石蝇"
+    weather: "碧空"
+    fish_type: "鱼王"
+    min_size: 13.7
+    min_big_size: 32.3
+    max_size: 34.3
+    base_value: 1500
+  - name: "野鲤"
+    region: "延夏"
+    fishing_ground: "茨菰村水塘"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 204
+  - name: "卜传"
+    region: "延夏"
+    fishing_ground: "多玛城前"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "鱼王"
+    min_size: 4.0
+    min_big_size: 9.4
+    max_size: 9.9
+    base_value: 1500
+  - name: "雷遁鱼"
+    region: "延夏"
+    fishing_ground: "多玛城前"
+    bait: "嗡嗡石蝇"
+    weather: "小雨/暴雨"
+    fish_type: "普通鱼"
+    min_size: 21.2
+    min_big_size: 49.9
+    max_size: 53.0
+    base_value: 204
+  - name: "白纸鱼"
+    region: "延夏"
+    fishing_ground: "多玛城前"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 11.8
+    min_big_size: 27.7
+    max_size: 29.4
+    base_value: 327
+  - name: "龙鱼"
+    region: "延夏"
+    fishing_ground: "多玛城前"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 16.5
+    min_big_size: 38.8
+    max_size: 41.2
+    base_value: 204
+  - name: "武士鱼"
+    region: "延夏"
+    fishing_ground: "多玛城前"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 0.7
+    min_big_size: 1.7
+    max_size: 1.8
+    base_value: 204
+  - name: "天女鲤"
+    region: "延夏"
+    fishing_ground: "梅泉乡"
+    bait: "嗡嗡石蝇"
+    weather: "薄雾"
+    fish_type: "鱼王"
+    min_size: 33.8
+    min_big_size: 79.5
+    max_size: 84.5
+    base_value: 1500
+  - name: "绢鲤"
+    region: "延夏"
+    fishing_ground: "梅泉乡"
+    bait: "嗡嗡石蝇"
+    weather: "小雨"
+    fish_type: "普通鱼"
+    min_size: 31.4
+    min_big_size: 73.9
+    max_size: 78.6
+    base_value: 204
+  - name: "熊猫蝶尾鱼"
+    region: "延夏"
+    fishing_ground: "梅泉乡"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 7.4
+    min_big_size: 17.3
+    max_size: 18.4
+    base_value: 204
+  - name: "赏梅鱼"
+    region: "延夏"
+    fishing_ground: "梅泉乡"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 8.7
+    min_big_size: 20.4
+    max_size: 21.7
+    base_value: 327
+  - name: "七彩天主"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "鱼皇"
+    min_size: 188.9
+    min_big_size: 444.0
+    max_size: 472.3
+    base_value: 25000
+  - name: "紫彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 204
+  - name: "白彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "紫彩鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 156
+  - name: "蓝彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "紫彩鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 8.7
+    min_big_size: 20.4
+    max_size: 21.7
+    base_value: 156
+  - name: "红彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 204
+  - name: "橙彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "红彩鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 8.7
+    min_big_size: 20.4
+    max_size: 21.7
+    base_value: 156
+  - name: "黄彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 327
+  - name: "青彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 9.4
+    min_big_size: 22.1
+    max_size: 23.5
+    base_value: 327
+  - name: "绿彩鱼"
+    region: "延夏"
+    fishing_ground: "七彩沟"
+    bait: "嗡嗡石蝇"
+    weather: "晴朗/碧空/晴朗"
+    fish_type: "普通鱼"
+    min_size: 8.7
+    min_big_size: 20.4
+    max_size: 21.7
+    base_value: 204
+  - name: "一束彩虹"
+    region: "延夏"
+    fishing_ground: "七彩溪谷"
+    bait: "悬浮诱饵鱼"
+    weather: "薄雾"
+    fish_type: "鱼王"
+    min_size: 25.1
+    min_big_size: 59.1
+    max_size: 62.8
+    base_value: 1500
+  - name: "多玛鳗"
+    region: "延夏"
+    fishing_ground: "七彩溪谷"
+    bait: "赤虫"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 10.0
+    min_big_size: 23.5
+    max_size: 25.0
+    base_value: 20
+  - name: "车轴鱼"
+    region: "延夏"
+    fishing_ground: "无二江东"
+    bait: "嗡嗡石蝇"
+    weather: "阴云/晴朗"
+    fish_type: "鱼王"
+    min_size: 47.2
+    min_big_size: 111.0
+    max_size: 118.0
+    base_value: 1500
+  - name: "延夏红眼鲈"
+    region: "延夏"
+    fishing_ground: "无二江东"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 31.4
+    min_big_size: 73.9
+    max_size: 78.6
+    base_value: 204
+  - name: "延夏鲤"
+    region: "延夏"
+    fishing_ground: "无二江东"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 20.6
+    min_big_size: 48.4
+    max_size: 51.4
+    base_value: 204
+  - name: "长须鲶鱼"
+    region: "延夏"
+    fishing_ground: "无二江东"
+    bait: "悬浮诱饵鱼"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 25.0
+    min_big_size: 58.7
+    max_size: 62.4
+    base_value: 327
+  - name: "奥萨德鲑鱼"
+    region: "延夏"
+    fishing_ground: "无二江东"
+    bait: "金属亮片"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 12.7
+    min_big_size: 29.8
+    max_size: 31.7
+    base_value: 20
+  - name: "羽衣美人"
+    region: "延夏"
+    fishing_ground: "无二江西"
+    bait: "嗡嗡石蝇"
+    weather: "阴云/碧空/晴朗"
+    fish_type: "鱼王"
+    min_size: 5.2
+    min_big_size: 12.3
+    max_size: 13.0
+    base_value: 1500
+  - name: "天女鱼"
+    region: "延夏"
+    fishing_ground: "无二江西"
+    bait: "嗡嗡石蝇"
+    weather: ""
+    fish_type: "普通鱼"
+    min_size: 2.3
+    min_big_size: 5.5
+    max_size: 5.8
+    base_value: 204

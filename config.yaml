@@ -1,0 +1,149 @@
+# FF14 钓鱼游戏配置文件
+# 所有数值类参数均通过此配置文件读取，不硬编码
+# 百分比采用 0~100 整数表示
+
+# ========== Debug 模式 ==========
+debug: true
+
+# ========== 基础参数 ==========
+
+# 初始金币
+initial_gold: 2000
+
+# 签到金币范围
+sign_gold_min: 1000
+sign_gold_max: 2000
+
+# 鱼饵概率（百分比 0~100）
+bait_prob_target: 25      # 目标鱼概率
+bait_prob_king: 2         # 鱼王概率
+bait_prob_emperor: 0.2    # 鱼皇概率
+
+# 尺寸分布概率（百分比 0~100）
+size_prob_normal: 75      # 普通尺寸概率
+size_prob_big: 25         # 大鱼尺寸概率
+
+# 价值浮动范围（百分比 0~100）
+value_float_percent: 20   # ±20%
+
+# 氪金上限
+krypton_max: 1000
+
+# 分页大小
+page_size: 10
+
+# 排行榜显示条数
+leaderboard_size: 10
+
+# 版本固定字符串
+version_string: "FF14 4.0-4.X"
+
+# 数据库存储路径
+db_path: "fishing_game.db"
+
+# 天气类型列表
+weather_types:
+  - 晴朗
+  - 碧空
+  - 阴云
+  - 薄雾
+  - 微风
+  - 强风
+  - 小雨
+  - 暴雨
+  - 打雷
+  - 雷雨
+  - 扬沙
+
+# ========== 鱼饵数据 ==========
+# 从 fishingLure.xlsx 导入，可在配置中直接调整价格和可出售状态
+# sellable: true=可出售, false=不可出售
+# price: 商城售价（金币），为 null 表示不可出售
+lures:
+  - name: 肥蚯蚓
+    sellable: true
+    price: 20
+  - name: 梭子鰆
+    sellable: true
+    price: 20
+  - name: 金属亮片
+    sellable: true
+    price: 20
+  - name: 蓝矶沙蚕
+    sellable: true
+    price: 30
+  - name: 蔓菁拟饵
+    sellable: true
+    price: 20
+  - name: 活虾
+    sellable: true
+    price: 20
+  - name: 红玉虾
+    sellable: false
+    price: null
+  - name: 嗡嗡石蝇
+    sellable: true
+    price: 40
+  - name: 鲑鱼籽
+    sellable: true
+    price: 20
+  - name: 悬浮诱饵鱼
+    sellable: true
+    price: 40
+  - name: 赤虫
+    sellable: true
+    price: 20
+  - name: 蚕蛹
+    sellable: true
+    price: 20
+  - name: 岩盐咸鱼
+    sellable: false
+    price: null
+  - name: 基拉巴尼亚鳟
+    sellable: false
+    price: null
+  - name: 气球蛙
+    sellable: false
+    price: null
+  - name: 嘎牙子
+    sellable: false
+    price: null
+  - name: 天钢之球
+    sellable: true
+    price: 20
+  - name: 紫彩鱼
+    sellable: false
+    price: null
+  - name: 红彩鱼
+    sellable: false
+    price: null
+  - name: 万能鱼饵
+    sellable: false
+    price: null
+
+# ========== 鱼基础数据 ==========
+# 从 fish_data.xlsx 导入，可在配置中调整参数
+# bait 为空字符串表示任何鱼饵都能上钩
+# 完整数据在 fish_data.yaml 中，此处列出可通过热更新的可配项
+fishes:
+  - name: 公主青鳉
+    region: 白银乡
+    fishing_ground: 白银水路
+    bait: 肥蚯蚓
+    weather: ""
+    fish_type: 鱼王
+    min_size: 4.8
+    min_big_size: 11.4
+    max_size: 12.1
+    base_value: 1500
+  - name: 盆栽鱼
+    region: 白银乡
+    fishing_ground: 白银水路
+    bait: 肥蚯蚓
+    weather: ""
+    fish_type: 普通鱼
+    min_size: 3.9
+    min_big_size: 9.2
+    max_size: 9.7
+    base_value: 41
+# 完整鱼数据由 data_loader.py 从 fish_data.xlsx 加载

@@ -1,0 +1,64 @@
+# 鱼饵数据配置文件
+# 可直接修改此文件，然后通过 hot_reload 热更新
+
+lures:
+  - name: "肥蚯蚓"
+    sellable: true
+    price: 20
+  - name: "梭子鰆"
+    sellable: true
+    price: 20
+  - name: "金属亮片"
+    sellable: true
+    price: 20
+  - name: "蓝矶沙蚕"
+    sellable: true
+    price: 30
+  - name: "蔓菁拟饵"
+    sellable: true
+    price: 20
+  - name: "活虾"
+    sellable: true
+    price: 20
+  - name: "红玉虾"
+    sellable: false
+    price: null
+  - name: "嗡嗡石蝇"
+    sellable: true
+    price: 40
+  - name: "鲑鱼籽"
+    sellable: true
+    price: 20
+  - name: "悬浮诱饵鱼"
+    sellable: true
+    price: 40
+  - name: "赤虫"
+    sellable: true
+    price: 20
+  - name: "蚕蛹"
+    sellable: true
+    price: 20
+  - name: "岩盐咸鱼"
+    sellable: false
+    price: null
+  - name: "基拉巴尼亚鳟"
+    sellable: false
+    price: null
+  - name: "气球蛙"
+    sellable: false
+    price: null
+  - name: "嘎牙子"
+    sellable: false
+    price: null
+  - name: "天钢之球"
+    sellable: true
+    price: 20
+  - name: "紫彩鱼"
+    sellable: false
+    price: null
+  - name: "红彩鱼"
+    sellable: false
+    price: null
+  - name: "万能鱼饵"
+    sellable: false
+    price: null
