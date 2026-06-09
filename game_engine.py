@@ -32,7 +32,7 @@ def _init_db():
 
 
 def init_engine(data_dir=None):
-    """初始化游戏引擎，设置数据目录。
+    """初始化游戏引擎，设置数据目录并创建/导入数据。
     在 AstrBot 插件中调用此函数设置数据库路径。
     
     Args:
@@ -46,7 +46,44 @@ def init_engine(data_dir=None):
         _db = init_db_with_path(None, data_dir=data_dir)
     else:
         _db = get_db()
+    
+    # 创建数据库表结构
+    _db.init_database()
+    
+    # 如果鱼基础数据表为空，从 YAML/配置导入初始数据
+    all_fish = _db.get_all_fish()
+    if not all_fish:
+        # 从 config.yaml 和 fish_data.yaml 加载鱼数据
+        fish_data = _config.get("fishes", [])
+        if fish_data:
+            _db.import_fish_data(fish_data)
+            logger.info(f"已导入 {len(fish_data)} 条鱼基础数据到数据库")
+        
+        # 导入鱼饵数据
+        lures = _config.get("lures", [])
+        if lures:
+            _db.import_lure_data(lures)
+            logger.info(f"已导入 {len(lures)} 条鱼饵数据到数据库")
+    
+    # 生成天气数据
+    from datetime import date as dt, timedelta
+    today = dt.today()
+    for i in range(4):
+        d = (today + timedelta(days=i)).isoformat()
+        for slot in (0, 1):
+            _db.generate_weather(d, slot)
+    
+    if is_debug():
+        _debug(f"引擎初始化完成，数据库路径: {_db.db_path}")
+        _debug(f"鱼种数: {len(_db.get_all_fish())}, 鱼饵数: {len(_db.get_all_lures())}")
 
+
+# 在模块加载时记录日志（不是 AstrBot 环境时使用）
+import logging
+try:
+    logger = logging.getLogger("astrbot")
+except Exception:
+    logger = logging.getLogger(__name__)
 
 _config = _load_config()
 _init_db()
