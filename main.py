@@ -249,12 +249,21 @@ class FishingPlugin(Star):
 
     @filter.command("鱼群图鉴")
     async def cmd_handbook(self, event: AstrMessageEvent):
-        """查看鱼群图鉴：/鱼群图鉴 [页码] [钓场]"""
+        """查看鱼群图鉴：/鱼群图鉴 [页码] [钓场]  或  /鱼群图鉴 [钓场]"""
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         args = parse_args(event.message_str)
         page = args[1] if len(args) >= 2 else 1
         fishing_ground = args[2] if len(args) >= 3 else None
+        # 智能识别：如果第一个参数不是纯数字，当作钓场名处理
+        if page is not None and page != 1:
+            try:
+                int(str(page))
+            except (ValueError, TypeError):
+                # 第一个参数是非数字 → 当作 fishing_ground
+                if fishing_ground is None:
+                    fishing_ground = page
+                page = 1
         result = fish_handbook(user_id, group_id, page=page, fishing_ground=fishing_ground)
         yield event.plain_result(result)
 

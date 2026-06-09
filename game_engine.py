@@ -53,13 +53,19 @@ def init_engine(data_dir=None):
     # 如果鱼基础数据表为空，从 YAML/配置导入初始数据
     all_fish = _db.get_all_fish()
     if not all_fish:
-        # 从 config.yaml 和 fish_data.yaml 加载鱼数据
+        # 优先从 fish_data.yaml 加载完整的鱼基础数据
+        fish_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_data.yaml")
         fish_data = _config.get("fishes", [])
+        if os.path.exists(fish_data_path):
+            with open(fish_data_path, "r", encoding="utf-8") as f:
+                fish_yaml = yaml.safe_load(f)
+                if fish_yaml and "fishes" in fish_yaml:
+                    fish_data = fish_yaml["fishes"]
         if fish_data:
             _db.import_fish_data(fish_data)
             logger.info(f"已导入 {len(fish_data)} 条鱼基础数据到数据库")
         
-        # 导入鱼饵数据
+        # 导入鱼饵数据（从 config.yaml 加载）
         lures = _config.get("lures", [])
         if lures:
             _db.import_lure_data(lures)
