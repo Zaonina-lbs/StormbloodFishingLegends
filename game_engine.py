@@ -238,6 +238,20 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
         return "❌ 单次最多钓鱼10次"
 
     effective_bait = bait_param or user.get("default_bait") or "万能鱼饵"
+    # 检查鱼饵/金币是否充足
+    if effective_bait == "万能鱼饵":
+        bait_price = _config.get("default_bait_price", 100)
+        total_cost = bait_price * count
+        if user["gold"] < total_cost:
+            return f"❌ 金币不足！需要 {total_cost} G，当前 {user['gold']} G"
+    else:
+        if not _db.check_lure(user_id, group_id, effective_bait):
+            return f"❌ 背包中没有 {effective_bait}"
+        inv = _db.get_inventory(user_id, group_id)
+        owned = sum(i["quantity"] for i in inv if i["lure_name"] == effective_bait)
+        if owned < count:
+            return f"❌ {effective_bait} 不足！需要 {count} 个，拥有 {owned} 个"
+
     lines = [f"🎣 当前使用鱼饵：{effective_bait}"]
     if count > 1:
         lines.append(f"  连续钓鱼 {count} 次")
@@ -365,26 +379,16 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
     # 价值计算
     value = _calculate_value(chosen_fish, size)
 
-    # 自动锁定
-    auto_locked = 0
-    lock_reason = ""
-    if chosen_fish["fish_type"] in ("鱼王", "鱼皇"):
-        auto_locked = 1
-        lock_reason = "L"
-    if not auto_locked:
-        extreme = _db.get_extreme(group_id, chosen_fish["name"])
-        if extreme["max_size"] is None or size > extreme["max_size"]:
-            auto_locked = 1
-            lock_reason = "M"
-        elif extreme["min_size"] is None or size < extreme["min_size"]:
-            auto_locked = 1
-            lock_reason = "m"
+    # 自动锁定：仅鱼王鱼皇
+    auto_locked = 1 if chosen_fish["fish_type"] in ("鱼王", "鱼皇") else 0
 
     # 保存
     _db.add_caught(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, auto_locked)
     _db.add_log(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, effective_bait, chosen_fish["fishing_ground"], weather_type)
 
-    if effective_bait != "万能鱼饵":
+    if effective_bait == "万能鱼饵":
+        _db.update_user_gold(user_id, group_id, -_config.get("default_bait_price", 100))
+    else:
         _db.remove_lure(user_id, group_id, effective_bait, 1)
 
     big_label = "🐠" if is_big else ""
@@ -413,7 +417,8 @@ def _calculate_value(fish, size):
     else:
         size_ratio = 0.5
     float_pct = _config.get("value_float_percent", 20) / 100.0
-    value = base_value * (1 + (size_ratio - 0.5) * 2 * float_pct)
+    multiplier = _config.get("value_multiplier", 1.0)
+    value = base_value * (1 + (size_ratio - 0.5) * 2 * float_pct) * multiplier
     return round(max(1, value))
 
 

@@ -55,6 +55,11 @@ weather_types:
   - 雷雨
   - 扬沙
 
+# 价值倍率（鱼实际产出 = base_value * 此倍率，用于平衡经济）
+value_multiplier: 0.7
+# 万能鱼饵每次钓鱼消耗金币
+default_bait_price: 100
+
 # ========== 鱼饵数据 ==========
 # 从 fishingLure.xlsx 导入，可在配置中直接调整价格和可出售状态
 # sellable: true=可出售, false=不可出售
@@ -62,40 +67,40 @@ weather_types:
 lures:
   - name: 肥蚯蚓
     sellable: true
-    price: 20
+    price: 200
   - name: 梭子鰆
     sellable: true
-    price: 20
+    price: 200
   - name: 金属亮片
     sellable: true
-    price: 20
+    price: 200
   - name: 蓝矶沙蚕
     sellable: true
-    price: 30
+    price: 300
   - name: 蔓菁拟饵
     sellable: true
-    price: 20
+    price: 200
   - name: 活虾
     sellable: true
-    price: 20
+    price: 200
   - name: 红玉虾
     sellable: false
     price: null
   - name: 嗡嗡石蝇
     sellable: true
-    price: 40
+    price: 400
   - name: 鲑鱼籽
     sellable: true
-    price: 20
+    price: 200
   - name: 悬浮诱饵鱼
     sellable: true
-    price: 40
+    price: 400
   - name: 赤虫
     sellable: true
-    price: 20
+    price: 200
   - name: 蚕蛹
     sellable: true
-    price: 20
+    price: 200
   - name: 岩盐咸鱼
     sellable: false
     price: null
@@ -110,7 +115,7 @@ lures:
     price: null
   - name: 天钢之球
     sellable: true
-    price: 20
+    price: 200
   - name: 紫彩鱼
     sellable: false
     price: null
@@ -119,7 +124,7 @@ lures:
     price: null
   - name: 万能鱼饵
     sellable: false
-    price: null
+    price: 100
 
 # ========== 鱼基础数据 ==========
 # 从 fish_data.xlsx 导入，可在配置中调整参数
