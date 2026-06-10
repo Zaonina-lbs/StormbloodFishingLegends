@@ -60,6 +60,13 @@ value_multiplier: 0.7
 # 万能鱼饵每次钓鱼消耗金币
 default_bait_price: 100
 
+# ========== 钓鱼CD设置 ==========
+fishing_cd:
+  # 是否启用钓鱼CD
+  enabled: true
+  # 单次钓鱼CD时间（分钟），多次钓鱼时 CD = cooldown_minutes * 次数
+  cooldown_minutes: 3
+
 # ========== 鱼饵数据 ==========
 # 从 fishingLure.xlsx 导入，可在配置中直接调整价格和可出售状态
 # sellable: true=可出售, false=不可出售

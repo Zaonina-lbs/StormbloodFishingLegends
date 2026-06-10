@@ -197,6 +197,45 @@ def set_bait(user_id, group_id, bait_name):
     return f"✅ 已将默认鱼饵设置为 {bait_name}"
 
 
+def _get_lure_sellable(bait_name):
+    """检查鱼饵是否为不可出售（卖不掉的）鱼饵。不可出售的鱼饵不限制CD"""
+    lure = _db.get_lure_by_name(bait_name)
+    if lure:
+        return bool(lure.get("sellable", 0))
+    return True  # 未知鱼饵按可出售处理
+
+
+def _check_fishing_cd(user_id, group_id, count):
+    """检查钓鱼CD，返回 (can_fish, message)
+    can_fish: True=可以钓鱼, False=CD中
+    message: 提示信息
+    """
+    cd_config = _config.get("fishing_cd", {})
+    if not cd_config.get("enabled", True):
+        return True, ""
+    last_time_str = _db.get_last_fishing_time(user_id, group_id)
+    if not last_time_str:
+        return True, ""
+    from datetime import datetime, timedelta
+    try:
+        last_time = datetime.strptime(last_time_str, "%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return True, ""
+    cooldown_minutes = cd_config.get("cooldown_minutes", 3)
+    total_cd = cooldown_minutes * count
+    cd_end = last_time + timedelta(minutes=total_cd)
+    now = datetime.now()
+    if now < cd_end:
+        remain_seconds = int((cd_end - now).total_seconds())
+        remain_minutes = remain_seconds // 60
+        remain_secs = remain_seconds % 60
+        if remain_minutes > 0:
+            return False, f"⏳ 钓鱼CD中！还需等待 {remain_minutes}分{remain_secs}秒（单次CD: {cooldown_minutes}分钟 × {count}次）"
+        else:
+            return False, f"⏳ 钓鱼CD中！还需等待 {remain_secs}秒（单次CD: {cooldown_minutes}分钟 × {count}次）"
+    return True, ""
+
+
 def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1):
     """执行钓鱼，支持批量 count 次
     参数顺序: user_id, group_id, bait, fishing_ground, count
@@ -252,6 +291,13 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
         if owned < count:
             return f"❌ {effective_bait} 不足！需要 {count} 个，拥有 {owned} 个"
 
+    # 钓鱼CD检查：仅对可出售的鱼饵进行CD限制，不可出售的鱼饵（如红玉虾等）不限制CD
+    lure_sellable = _get_lure_sellable(effective_bait)
+    if lure_sellable:
+        can_fish, cd_msg = _check_fishing_cd(user_id, group_id, count)
+        if not can_fish:
+            return cd_msg
+
     lines = [f"🎣 当前使用鱼饵：{effective_bait}"]
     if count > 1:
         lines.append(f"  连续钓鱼 {count} 次")
@@ -284,6 +330,10 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
                 # extract fish name
                 name = result.split("]：")[1].split("\n")[0] if "]：" in result else "unknown"
                 fish_counts[name] = fish_counts.get(name, 0) + 1
+
+    # 钓鱼完成后更新最后钓鱼时间（仅对可出售鱼饵记录CD）
+    if lure_sellable:
+        _db.update_fishing_time(user_id, group_id)
 
     if count == 1:
         single_result = results[0][4:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
@@ -794,9 +844,6 @@ def compensate(operator_id, group_id, target_user_id, gold):
         return "❌ 金币数量必须为整数"
     if gold <= 0:
         return "❌ 金币数量必须大于0"
-    max_gold = _config.get("krypton_max", 1000)
-    if gold > max_gold:
-        return f"❌ 单次补偿上限为 {max_gold} G"
     target = _db.get_user(target_user_id, group_id)
     if not target:
         return f"❌ 用户 {target_user_id} 在本群不存在"

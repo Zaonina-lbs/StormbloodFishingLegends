@@ -57,6 +57,7 @@ class Database:
                 default_bait TEXT DEFAULT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
                 last_sign_date TEXT DEFAULT NULL,
+                last_fishing_time TEXT DEFAULT NULL,
                 PRIMARY KEY (user_id, group_id)
             )
         """)
@@ -234,6 +235,21 @@ class Database:
         row=self.conn.execute("SELECT last_sign_date FROM users WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()
         self.close()
         return row["last_sign_date"] if row else None
+
+    # ---- fishing CD ----
+    def update_fishing_time(self, user_id, group_id):
+        """更新玩家最后钓鱼时间为当前时间"""
+        self.connect()
+        self.conn.execute("UPDATE users SET last_fishing_time=datetime('now','localtime') WHERE user_id=? AND group_id=?", (user_id, group_id))
+        self.conn.commit()
+        self.close()
+
+    def get_last_fishing_time(self, user_id, group_id):
+        """获取玩家最后钓鱼时间"""
+        self.connect()
+        row = self.conn.execute("SELECT last_fishing_time FROM users WHERE user_id=? AND group_id=?", (user_id, group_id)).fetchone()
+        self.close()
+        return row["last_fishing_time"] if row else None
 
     # ---- inventory ----
     def add_lure(self,user_id,group_id,lure_name,qty=1):
