@@ -128,8 +128,8 @@ def sign_in(user_id, group_id):
     if last_sign == today:
         return "❌ 今日已签到，请明天再来！"
     roll = random.random()
-    gold_min = _config.get("sign_gold_min", 2500)
-    gold_max = _config.get("sign_gold_max", 4000)
+    gold_min = _config.get("sign_gold_min", 1500)
+    gold_max = _config.get("sign_gold_max", 2000)
     if roll < 0.5:
         gold = random.randint(gold_min, gold_max)
         _db.update_user_gold(user_id, group_id, gold)
@@ -379,11 +379,16 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
     # 价值计算
     value = _calculate_value(chosen_fish, size)
 
-    # 自动锁定：仅鱼王鱼皇
-    auto_locked = 1 if chosen_fish["fish_type"] in ("鱼王", "鱼皇") else 0
+    # 自动锁定：鱼王鱼皇，以及可作为鱼饵的鱼
+    is_lure_fish = _db.is_fish_a_lure(chosen_fish["name"])
+    auto_locked = 1 if chosen_fish["fish_type"] in ("鱼王", "鱼皇") or is_lure_fish else 0
 
     # 保存
     _db.add_caught(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, auto_locked)
+
+    # 如果该鱼也是鱼饵，自动加入背包
+    if is_lure_fish:
+        _db.add_lure(user_id, group_id, chosen_fish["name"], 1)
     _db.add_log(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, effective_bait, chosen_fish["fishing_ground"], weather_type)
 
     if effective_bait == "万能鱼饵":
@@ -477,6 +482,7 @@ def get_fish_help():
         "  /钓鱼注册\n"
         "  /签到\n"
         "  /查看金币\n"
+        "  /我的信息\n"
         "  /钓鱼帮助\n"
         "  /鱼池版本\n"
         "\n【钓鱼】\n"
@@ -504,8 +510,9 @@ def get_fish_help():
         "  /鱼群图鉴 [地区|钓场|页码] [页码]\n"
         "  /钓鱼记录 [页]\n"
         "  /排行榜 [鱼名] [大/小]\n"
-        "\n【管理】\n"
-        "  /热更新（管理员）"
+        "\n【管理员】\n"
+        "  /热更新\n"
+        "  /补偿 [目标user_id] [金币]"
     )
 
 
@@ -565,21 +572,41 @@ def view_fish_pond(user_id, group_id, page=1):
 
 
 def lock_fish(user_id, group_id, fish_id):
+    """锁定鱼，支持批量锁定: /锁定 1,2,3"""
     if not fish_id:
         return "❌ 请提供 fish_id"
     if not group_id:
         return "❌ 请提供 group_id（群号）"
-    try:
-        fish_id = int(fish_id)
-    except (ValueError, TypeError):
+    # 解析逗号分隔的ID列表
+    raw_ids = str(fish_id).replace("，", ",").split(",")
+    id_list = []
+    for rid in raw_ids:
+        rid = rid.strip()
+        try:
+            id_list.append(int(rid))
+        except (ValueError, TypeError):
+            pass
+    if not id_list:
         return "❌ fish_id 必须为数字"
-    fish = _db.get_caught_by_id(fish_id, user_id, group_id)
-    if not fish:
-        return f"❌ 未找到鱼 ID={fish_id}"
-    if fish["locked"]:
-        return f"🔒 {fish['fish_name']} 已是锁定状态"
-    _db.lock_fish(fish_id, user_id, group_id)
-    return f"🔒 {fish['fish_name']} 已锁定"
+    # 批量处理
+    locked = []
+    failed = []
+    for fid in id_list:
+        fish = _db.get_caught_by_id(fid, user_id, group_id)
+        if not fish:
+            failed.append(str(fid))
+        elif fish["locked"]:
+            # 已锁定，但不报失败
+            locked.append(fish["fish_name"])
+        else:
+            _db.lock_fish(fid, user_id, group_id)
+            locked.append(fish["fish_name"])
+    lines = []
+    if locked:
+        lines.append(f"🔒 已锁定：{', '.join(locked)}")
+    if failed:
+        lines.append(f"❌ 锁定失败：{', '.join(failed)}（ID不存在）")
+    return "\n".join(lines)
 
 
 def unlock_fish(user_id, group_id, fish_id):
@@ -749,6 +776,40 @@ def view_krypton_log(user_id, group_id):
     for r in records[:20]:
         lines.append(f"  {r['created_at']} : +{r['amount']} G")
     return "\n".join(lines)
+
+
+def compensate(operator_id, group_id, target_user_id, gold):
+    """管理员向目标用户补偿金币"""
+    if not operator_id:
+        return "❌ 请提供 operator_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    if not target_user_id:
+        return "❌ 请提供目标用户的 user_id"
+    if gold is None:
+        return "❌ 请提供金币数量"
+    try:
+        gold = int(gold)
+    except (ValueError, TypeError):
+        return "❌ 金币数量必须为整数"
+    if gold <= 0:
+        return "❌ 金币数量必须大于0"
+    max_gold = _config.get("krypton_max", 1000)
+    if gold > max_gold:
+        return f"❌ 单次补偿上限为 {max_gold} G"
+    target = _db.get_user(target_user_id, group_id)
+    if not target:
+        return f"❌ 用户 {target_user_id} 在本群不存在"
+    _db.update_user_gold(target_user_id, group_id, gold)
+    _db.add_krypton(target_user_id, group_id, gold)
+    return f"✅ 管理员 {operator_id} 已向用户 {target_user_id} 补偿 {gold} G"
+
+
+def my_info(user_id):
+    """返回用户自己的 user_id"""
+    if not user_id:
+        return "❌ 无法获取用户信息"
+    return f"📋 你的 user_id：{user_id}"
 
 
 # ==================== 图鉴与排行榜 ====================

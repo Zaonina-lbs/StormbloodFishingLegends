@@ -35,6 +35,8 @@ from .game_engine import (
     leaderboard,
     get_distinct_regions,
     get_distinct_grounds,
+    compensate,
+    my_info,
 )
 
 # 热更新
@@ -270,6 +272,29 @@ class FishingPlugin(Star):
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         result = view_krypton_log(user_id, group_id)
+        yield event.plain_result(result)
+
+    # ==================== 管理员 ====================
+
+    @filter.command("补偿")
+    async def cmd_compensate(self, event: AstrMessageEvent):
+        """管理员向目标用户补偿金币：/补偿 [目标user_id] [金币]"""
+        if not event.is_admin():
+            yield event.plain_result("❌ 仅管理员可使用此命令")
+            return
+        operator_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        args = parse_args(event.message_str)
+        target_user_id = args[1] if len(args) >= 2 else None
+        gold = args[2] if len(args) >= 3 else None
+        result = compensate(operator_id, group_id, target_user_id, gold)
+        yield event.plain_result(result)
+
+    @filter.command("我的信息")
+    async def cmd_my_info(self, event: AstrMessageEvent):
+        """查看自己的 user_id"""
+        user_id = event.get_sender_id()
+        result = my_info(user_id)
         yield event.plain_result(result)
 
     # ==================== 图鉴与排行榜 ====================

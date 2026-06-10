@@ -309,6 +309,9 @@ class Database:
         ph=",".join("?"*len(ids))
         self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})",ids)
         self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(total,user_id,group_id))
+        # 如果该鱼也是鱼饵，从背包中清除对应数量
+        if self._is_lure_name(fish_name):
+            self._remove_lure_silent(user_id, group_id, fish_name, len(ids))
         self.conn.commit()
         self.close()
         return len(ids),total
@@ -320,19 +323,30 @@ class Database:
         if row["locked"]: self.close(); return None,f"{row['fish_name']} 已锁定"
         self.conn.execute("UPDATE fish_caught SET is_sold=1 WHERE id=?",(fish_id,))
         self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(row["value"],user_id,group_id))
+        # 如果该鱼也是鱼饵，从背包中清除
+        if self._is_lure_name(row["fish_name"]):
+            self._remove_lure_silent(user_id, group_id, row["fish_name"], 1)
         self.conn.commit()
         self.close()
         return row["value"],row["fish_name"]
 
     def sell_all(self,user_id,group_id):
         self.connect()
-        rows=self.conn.execute("SELECT id,value FROM fish_caught WHERE user_id=? AND group_id=? AND locked=0 AND is_sold=0",(user_id,group_id)).fetchall()
+        rows=self.conn.execute("SELECT id,fish_name,value FROM fish_caught WHERE user_id=? AND group_id=? AND locked=0 AND is_sold=0",(user_id,group_id)).fetchall()
         if not rows: self.close(); return 0,0
         total=sum(r["value"] for r in rows)
         ids=[r["id"] for r in rows]
         ph=",".join("?"*len(ids))
         self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})",ids)
         self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(total,user_id,group_id))
+        # 统计需从背包清除的鱼饵类鱼种
+        lure_counts = {}
+        for r in rows:
+            name = r["fish_name"]
+            if self._is_lure_name(name):
+                lure_counts[name] = lure_counts.get(name, 0) + 1
+        for name, qty in lure_counts.items():
+            self._remove_lure_silent(user_id, group_id, name, qty)
         self.conn.commit()
         self.close()
         return len(ids),total
@@ -515,6 +529,29 @@ class Database:
         rows=self.conn.execute("SELECT * FROM lures").fetchall()
         self.close()
         return [dict(r) for r in rows]
+
+    def is_fish_a_lure(self, fish_name):
+        """检查鱼名是否也存在于鱼饵表中（即可作为鱼饵使用的鱼）"""
+        self.connect()
+        row = self.conn.execute("SELECT name FROM lures WHERE name=?", (fish_name,)).fetchone()
+        self.close()
+        return row is not None
+
+    def _is_lure_name(self, fish_name):
+        """内部方法：在同一连接内判断鱼名是否也是鱼饵（不自带 connect/close）"""
+        row = self.conn.execute("SELECT name FROM lures WHERE name=?", (fish_name,)).fetchone()
+        return row is not None
+
+    def _remove_lure_silent(self, user_id, group_id, lure_name, qty=1):
+        """内部方法：在同一连接内从背包移除鱼饵（不自带 connect/close），不清零则删除记录"""
+        row = self.conn.execute("SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?", (user_id, group_id, lure_name)).fetchone()
+        if not row:
+            return
+        nq = row["quantity"] - qty
+        if nq <= 0:
+            self.conn.execute("DELETE FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?", (user_id, group_id, lure_name))
+        else:
+            self.conn.execute("UPDATE inventory SET quantity=? WHERE user_id=? AND group_id=? AND lure_name=?", (nq, user_id, group_id, lure_name))
 
     # ---- krypton ----
     def add_krypton(self,user_id,group_id,amount):

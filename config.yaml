@@ -11,8 +11,8 @@ debug: true
 initial_gold: 2000
 
 # 签到金币范围
-sign_gold_min: 1000
-sign_gold_max: 2000
+sign_gold_min: 2000
+sign_gold_max: 4000
 
 # 鱼饵概率（百分比 0~100）
 bait_prob_target: 25      # 目标鱼概率
