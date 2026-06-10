@@ -412,7 +412,7 @@ class Database:
     def get_fish_by_bait(self,bait,weather_type=None,fishing_ground=None):
         self.connect()
         if bait:
-            query="SELECT * FROM fish_base WHERE bait=? OR bait=''"
+            query="SELECT * FROM fish_base WHERE (bait=? OR bait='')"
             params=[bait]
         else:
             query="SELECT * FROM fish_base WHERE 1=1"

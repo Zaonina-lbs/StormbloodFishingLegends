@@ -339,7 +339,7 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
         _db.update_fishing_time(user_id, group_id)
 
     if count == 1:
-        single_result = results[0][4:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
+        single_result = results[0][7:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
         return f"🎣 当前使用鱼饵：{effective_bait}\n{single_result}"
 
     # 汇总
@@ -505,7 +505,7 @@ def clear_bait(user_id, group_id):
     return "✅ 已恢复使用万能鱼饵"
 
 def view_fish_pool():
-    """查看当前鱼池（当前天气下可钓的鱼），按鱼皇>鱼王>普通鱼排序"""
+    """查看当前鱼池（当前天气下可钓的鱼），天气限定鱼显示在最前面，然后按鱼皇>鱼王>普通鱼排序"""
     weather = _db.get_today_weather()
     weather_type = weather["weather"]
     all_fish = _db.get_all_fish()
@@ -515,17 +515,33 @@ def view_fish_pool():
             pool.append(f)
     if not pool:
         return "🐟 当前鱼池为空"
+    # 分离天气限定鱼和非限定鱼
+    weather_locked = [f for f in pool if f.get("weather", "") != ""]
+    no_weather = [f for f in pool if f.get("weather", "") == ""]
     # 按鱼皇>鱼王>普通鱼排序
     type_order = {"鱼皇": 0, "鱼王": 1, "普通鱼": 2}
-    pool.sort(key=lambda x: (type_order.get(x["fish_type"], 99), x["name"]))
+    weather_locked.sort(key=lambda x: (type_order.get(x["fish_type"], 99), x["name"]))
+    no_weather.sort(key=lambda x: (type_order.get(x["fish_type"], 99), x["name"]))
     lines = [f"🐟 当前鱼池（天气：{weather_type}，共 {len(pool)} 种）"]
     current_type = None
-    for f in pool:
-        if f["fish_type"] != current_type:
-            current_type = f["fish_type"]
-            lines.append(f"\n  【{current_type}】")
-        bait_str = f.get("bait", "") or "通杀"
-        lines.append(f"    {f['name']} - {bait_str}")
+    if weather_locked:
+        lines.append(f"\n  【天气限定】（{len(weather_locked)} 种）")
+        for f in weather_locked:
+            if f["fish_type"] != current_type:
+                current_type = f["fish_type"]
+                lines.append(f"    ── {current_type} ──")
+            bait_str = f.get("bait", "") or "通杀"
+            weather_str = f.get("weather", "")
+            lines.append(f"    {f['name']} - {bait_str} 🌤️{weather_str}")
+    current_type = None
+    if no_weather:
+        lines.append(f"\n  【通用】（{len(no_weather)} 种）")
+        for f in no_weather:
+            if f["fish_type"] != current_type:
+                current_type = f["fish_type"]
+                lines.append(f"    ── {current_type} ──")
+            bait_str = f.get("bait", "") or "通杀"
+            lines.append(f"    {f['name']} - {bait_str}")
     return "\n".join(lines)
 
 def get_fish_help():
