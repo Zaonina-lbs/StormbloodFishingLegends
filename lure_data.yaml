@@ -59,6 +59,12 @@ lures:
   - name: "红彩鱼"
     sellable: false
     price: null
+  - name: "苦尔鳗"
+    sellable: false
+    price: null
+  - name: "硬头鳟"
+    sellable: false
+    price: null
   - name: "万能鱼饵"
     sellable: false
     price: null
