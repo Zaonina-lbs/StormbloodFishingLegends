@@ -198,7 +198,10 @@ def set_bait(user_id, group_id, bait_name):
 
 
 def _get_lure_sellable(bait_name):
-    """检查鱼饵是否为不可出售（卖不掉的）鱼饵。不可出售的鱼饵不限制CD"""
+    """检查鱼饵是否为不可出售（卖不掉的）鱼饵。不可出售的鱼饵不限制CD
+    注意：万能鱼饵虽然是不可出售的，但仍然需要CD限制"""
+    if bait_name == "万能鱼饵":
+        return True  # 万能鱼饵也需要CD
     lure = _db.get_lure_by_name(bait_name)
     if lure:
         return bool(lure.get("sellable", 0))

@@ -107,6 +107,12 @@ StormbloodFishingLegends/
 - 不同天气影响可钓的鱼种
 - 鱼皇只在特定天气出现
 
+### 钓鱼冷却（CD）
+- 使用可出售的鱼饵或万能鱼饵钓鱼后，进入冷却时间
+- 单次CD = `cooldown_minutes` × 钓鱼次数，默认3分钟/次
+- 冷却期间无法使用受CD限制的鱼饵继续钓鱼
+- 不可出售的特殊鱼饵（如红玉虾、岩盐咸鱼、基拉巴尼亚鳟、气球蛙等）不受CD限制
+
 ### 数据按群隔离
 - 所有玩家数据按群聊分组
 - 不同群的账号、金币、背包完全独立
@@ -126,6 +132,8 @@ StormbloodFishingLegends/
 | `size_prob_normal` | `75` | 普通尺寸概率（%） |
 | `value_float_percent` | `20` | 价值浮动范围（%） |
 | `krypton_max` | `1000` | 单次氪金上限 |
+| `fishing_cd.enabled` | `true` | 钓鱼冷却开关 |
+| `fishing_cd.cooldown_minutes` | `3` | 单次钓鱼冷却时间（分钟） |
 | `page_size` | `10` | 分页大小 |
 | `leaderboard_size` | `10` | 排行榜显示条数 |
 
