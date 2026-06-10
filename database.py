@@ -149,6 +149,13 @@ class Database:
         c.execute("CREATE INDEX IF NOT EXISTS idx_fl_user ON fishing_log(user_id,group_id,catch_time)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_inv_user ON inventory(user_id,group_id,lure_name)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_weather_date ON weather(weather_date,slot)")
+
+        # 迁移：为已有的 users 表添加 last_fishing_time 列（如果不存在）
+        try:
+            c.execute("ALTER TABLE users ADD COLUMN last_fishing_time TEXT DEFAULT NULL")
+        except sqlite3.OperationalError:
+            pass  # 列已存在
+
         self.conn.commit()
         self.close()
 
