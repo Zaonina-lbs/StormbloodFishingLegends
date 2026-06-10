@@ -412,8 +412,15 @@ class Database:
     def get_fish_by_bait(self,bait,weather_type=None,fishing_ground=None):
         self.connect()
         if bait:
-            query="SELECT * FROM fish_base WHERE (bait=? OR bait='')"
-            params=[bait]
+            # 支持多鱼饵：bait 字段可能为 "蓝矶沙蚕/苦尔鳗" 格式
+            # 匹配条件：bait 为空(通杀)、bait 完全匹配、bait 以 "/" 分隔包含当前饵
+            query="SELECT * FROM fish_base WHERE (bait=? OR bait='' OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)"
+            params=[
+                bait,
+                bait + "/%",       # bait 开头段匹配：如 "蓝矶沙蚕/..."
+                "%/" + bait,       # bait 末尾段匹配：如 ".../蓝矶沙蚕"
+                "%/" + bait + "/%" # bait 中间段匹配：如 ".../蓝矶沙蚕/..."
+            ]
         else:
             query="SELECT * FROM fish_base WHERE 1=1"
             params=[]
@@ -667,10 +674,22 @@ class Database:
         self.close()
 
     def reload_fish_data(self,fish_list):
-        """热更新鱼基础数据"""
+        """热更新鱼基础数据，同步 bait、weather、fish_type、尺寸和基础价值等字段"""
         self.connect()
         for fish in fish_list:
-            self.conn.execute("UPDATE fish_base SET base_value=? WHERE name=?",(fish.get("base_value",50),fish["name"]))
+            self.conn.execute(
+                "UPDATE fish_base SET bait=?, weather=?, fish_type=?, min_size=?, min_big_size=?, max_size=?, base_value=? WHERE name=?",
+                (
+                    fish.get("bait", ""),
+                    fish.get("weather", ""),
+                    fish.get("fish_type", "普通鱼"),
+                    fish.get("min_size", 0),
+                    fish.get("min_big_size", 0),
+                    fish.get("max_size", 0),
+                    fish.get("base_value", 50),
+                    fish["name"],
+                )
+            )
         self.conn.commit()
         self.close()
 

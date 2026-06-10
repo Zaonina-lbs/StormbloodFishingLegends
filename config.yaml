@@ -56,7 +56,9 @@ weather_types:
   - 扬沙
 
 # 价值倍率（鱼实际产出 = base_value * 此倍率，用于平衡经济）
-value_multiplier: 0.7
+value_multiplier: 0.9
+# 钓鱼失败率（百分比 0~100）
+fishing_fail_rate: 20     # 钓鱼脱钩概率
 # 万能鱼饵每次钓鱼消耗金币
 default_bait_price: 100
 
@@ -127,6 +129,12 @@ lures:
     sellable: false
     price: null
   - name: 红彩鱼
+    sellable: false
+    price: null
+  - name: 苦尔鳗
+    sellable: false
+    price: null
+  - name: 硬头鳟
     sellable: false
     price: null
   - name: 万能鱼饵

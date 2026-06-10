@@ -36,11 +36,10 @@ from .game_engine import (
     get_distinct_regions,
     get_distinct_grounds,
     compensate,
+    compensate_lure,
     my_info,
+    set_weather_command,
 )
-
-# 热更新
-from . import hot_reload
 
 # AstrBot 路径工具
 from astrbot.core.utils.astrbot_path import get_astrbot_plugin_data_path
@@ -382,14 +381,33 @@ class FishingPlugin(Star):
 
     # ==================== 管理 ====================
 
-    @filter.command("热更新")
-    async def cmd_hot_reload(self, event: AstrMessageEvent):
-        """管理员热更新游戏数据"""
+    @filter.command("补偿鱼饵")
+    async def cmd_compensate_lure(self, event: AstrMessageEvent):
+        """管理员向目标用户补偿鱼饵：/补偿鱼饵 [目标user_id] [鱼饵] [数量]"""
         if not event.is_admin():
             yield event.plain_result("❌ 仅管理员可使用此命令")
             return
-        success, msg = hot_reload.do_reload(confirm=True)
-        yield event.plain_result(msg)
+        operator_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        args = parse_args(event.message_str)
+        target_user_id = args[1] if len(args) >= 2 else None
+        lure_name = args[2] if len(args) >= 3 else None
+        quantity = args[3] if len(args) >= 4 else 1
+        result = compensate_lure(operator_id, group_id, target_user_id, lure_name, quantity)
+        yield event.plain_result(result)
+
+    @filter.command("修改天气")
+    async def cmd_set_weather(self, event: AstrMessageEvent):
+        """管理员修改当前天气：/修改天气 [天气类型]"""
+        if not event.is_admin():
+            yield event.plain_result("❌ 仅管理员可使用此命令")
+            return
+        operator_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        args = parse_args(event.message_str)
+        weather_type = args[1] if len(args) >= 2 else None
+        result = set_weather_command(operator_id, group_id, weather_type)
+        yield event.plain_result(result)
 
     async def terminate(self):
         """插件销毁时的清理操作"""

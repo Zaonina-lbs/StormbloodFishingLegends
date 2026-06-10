@@ -50,26 +50,23 @@ def init_engine(data_dir=None):
     # 创建数据库表结构
     _db.init_database()
     
-    # 如果鱼基础数据表为空，从 YAML/配置导入初始数据
-    all_fish = _db.get_all_fish()
-    if not all_fish:
-        # 优先从 fish_data.yaml 加载完整的鱼基础数据
-        fish_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_data.yaml")
-        fish_data = _config.get("fishes", [])
-        if os.path.exists(fish_data_path):
-            with open(fish_data_path, "r", encoding="utf-8") as f:
-                fish_yaml = yaml.safe_load(f)
-                if fish_yaml and "fishes" in fish_yaml:
-                    fish_data = fish_yaml["fishes"]
-        if fish_data:
-            _db.import_fish_data(fish_data)
-            logger.info(f"已导入 {len(fish_data)} 条鱼基础数据到数据库")
-        
-        # 导入鱼饵数据（从 config.yaml 加载）
-        lures = _config.get("lures", [])
-        if lures:
-            _db.import_lure_data(lures)
-            logger.info(f"已导入 {len(lures)} 条鱼饵数据到数据库")
+    # 始终从 fish_data.yaml 同步鱼基础数据（删除重建，保证数据最新）
+    fish_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_data.yaml")
+    fish_data = _config.get("fishes", [])
+    if os.path.exists(fish_data_path):
+        with open(fish_data_path, "r", encoding="utf-8") as f:
+            fish_yaml = yaml.safe_load(f)
+            if fish_yaml and "fishes" in fish_yaml:
+                fish_data = fish_yaml["fishes"]
+    if fish_data:
+        _db.import_fish_data(fish_data)
+        logger.info(f"已同步 {len(fish_data)} 条鱼基础数据到数据库")
+    
+    # 始终同步鱼饵数据（使用 upsert，不删除已有记录，保证用户背包数据不丢失）
+    lures = _config.get("lures", [])
+    if lures:
+        _db.reload_lure_data(lures)
+        logger.info(f"已校准 {len(lures)} 条鱼饵数据到数据库")
     
     # 生成天气数据
     from datetime import date as dt, timedelta
@@ -175,6 +172,25 @@ def view_weather():
     for w in weather_data:
         lines.append(f"  {w['label']}：{w['weather']}")
     return "\n".join(lines)
+
+
+def set_weather_command(operator_id, group_id, weather_type):
+    """管理员修改当前天气"""
+    if not operator_id:
+        return "❌ 请提供 operator_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    if not weather_type:
+        return "❌ 请提供天气类型"
+    valid_weather = _config.get("weather_types", [])
+    if weather_type not in valid_weather:
+        return f"❌ 无效的天气类型！可选：{'/'.join(valid_weather)}"
+    from datetime import date as dt
+    today = dt.today().isoformat()
+    slot = _db._current_slot()
+    _db.set_weather(today, slot, weather_type)
+    label = "白天" if slot == 0 else "晚上"
+    return f"✅ 管理员 {operator_id} 已将当前天气修改为：{weather_type}（{today} {label}）"
 
 
 # ==================== 钓鱼核心 ====================
@@ -383,8 +399,14 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
             all_in_ground = _db.get_fish_by_ground(fishing_ground, weather_type)
             candidate_fish = []
             for f in all_in_ground:
-                if f["bait"] == effective_bait or f["bait"] == "":
+                fish_bait = f.get("bait", "")
+                if fish_bait == "" or fish_bait == effective_bait:
                     candidate_fish.append(f)
+                elif "/" in fish_bait:
+                    # 多鱼饵支持：bait 字段可能为 "蓝矶沙蚕/苦尔鳗"
+                    bait_parts = fish_bait.split("/")
+                    if effective_bait in bait_parts:
+                        candidate_fish.append(f)
         else:
             candidate_fish = _db.get_fish_by_bait(effective_bait, weather_type)
 
@@ -393,6 +415,12 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
 
     if show_debug:
         _debug(f"鱼池共 {len(candidate_fish)} 条鱼")
+
+    # 先消耗鱼饵（无论是否上钩，鱼饵都已使用）
+    if effective_bait == "万能鱼饵":
+        _db.update_user_gold(user_id, group_id, -_config.get("default_bait_price", 100))
+    else:
+        _db.remove_lure(user_id, group_id, effective_bait, 1)
 
     # 按类型分组
     normal_fish = [f for f in candidate_fish if f["fish_type"] == "普通鱼"]
@@ -410,19 +438,39 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
         prob_target = _config.get("bait_prob_target", 25)
         prob_king = _config.get("bait_prob_king", 2)
         prob_emperor = _config.get("bait_prob_emperor", 0.2)
+        # 当鱼皇使用的鱼饵本身就是鱼王时，将鱼皇概率提升至鱼王级别
+        # 因为玩家已经付出了获取鱼王的努力，鱼皇不应再用极低基础概率
+        prob_emperor_effective = prob_emperor
+        if emperor_fish:
+            bait_fish = _db.get_fish_by_name(effective_bait)
+            if bait_fish and bait_fish[0].get("fish_type") == "鱼王":
+                prob_emperor_effective = prob_king
+                if show_debug:
+                    _debug(f"鱼皇饵为鱼王({effective_bait})，鱼皇概率提升至 {prob_emperor_effective}%")
         roll = random.uniform(0, 100)
         if show_debug:
             _debug(f"概率判定 roll={roll:.1f}")
-        if emperor_fish and roll < prob_emperor:
+        if emperor_fish and roll < prob_emperor_effective:
             target_pool = emperor_fish
-        elif king_fish and roll < prob_emperor + prob_king:
+        elif king_fish and roll < prob_emperor_effective + prob_king:
             target_pool = king_fish
-        elif normal_fish and roll < prob_emperor + prob_king + prob_target:
+        elif normal_fish and roll < prob_emperor_effective + prob_king + prob_target:
             target_pool = normal_fish
         else:
-            target_pool = normal_fish if normal_fish else candidate_fish
+            # 根据配置的概率区间判定，如果没有匹配则视为未上钩
+            if normal_fish:
+                target_pool = normal_fish
+            else:
+                return "💨 没有鱼上钩..."
 
     chosen_fish = random.choice(target_pool)
+
+    # 钓鱼失败率检查（脱钩概率）
+    fail_rate = _config.get("fishing_fail_rate", 0) / 100.0
+    if fail_rate > 0 and random.random() < fail_rate:
+        if show_debug:
+            _debug(f"脱钩判定: 命中 {fail_rate*100:.0f}% 失败率")
+        return "💨 鱼脱钩了！"
 
     # 尺寸生成
     size, is_big = _generate_size(chosen_fish["min_size"], chosen_fish["min_big_size"], chosen_fish["max_size"])
@@ -443,11 +491,6 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
     if is_lure_fish:
         _db.add_lure(user_id, group_id, chosen_fish["name"], 1)
     _db.add_log(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, effective_bait, chosen_fish["fishing_ground"], weather_type)
-
-    if effective_bait == "万能鱼饵":
-        _db.update_user_gold(user_id, group_id, -_config.get("default_bait_price", 100))
-    else:
-        _db.remove_lure(user_id, group_id, effective_bait, 1)
 
     big_label = "🐠" if is_big else ""
     lock_label = "🔒" if auto_locked else ""
@@ -580,7 +623,8 @@ def get_fish_help():
         "  /钓鱼记录 [页]\n"
         "  /排行榜 [鱼名] [大/小]\n"
         "\n【管理员】\n"
-        "  /热更新\n"
+        "  /修改天气 [天气类型]\n"
+        "  /补偿鱼饵 [目标user_id] [鱼饵] [数量]\n"
         "  /补偿 [目标user_id] [金币]"
     )
 
@@ -869,6 +913,34 @@ def compensate(operator_id, group_id, target_user_id, gold):
     _db.update_user_gold(target_user_id, group_id, gold)
     _db.add_krypton(target_user_id, group_id, gold)
     return f"✅ 管理员 {operator_id} 已向用户 {target_user_id} 补偿 {gold} G"
+
+
+def compensate_lure(operator_id, group_id, target_user_id, lure_name, quantity):
+    """管理员向目标用户补偿鱼饵"""
+    if not operator_id:
+        return "❌ 请提供 operator_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    if not target_user_id:
+        return "❌ 请提供目标用户的 user_id"
+    if not lure_name:
+        return "❌ 请提供鱼饵名称"
+    lure = _db.get_lure_by_name(lure_name)
+    if not lure:
+        return f"❌ 鱼饵 {lure_name} 不存在"
+    try:
+        qty = int(quantity) if quantity else 1
+    except (ValueError, TypeError):
+        return "❌ 数量必须为整数"
+    if qty <= 0:
+        return "❌ 数量必须大于0"
+    if qty > 999:
+        return "❌ 单次补偿上限为 999"
+    target = _db.get_user(target_user_id, group_id)
+    if not target:
+        return f"❌ 用户 {target_user_id} 在本群不存在"
+    _db.add_lure(target_user_id, group_id, lure_name, qty)
+    return f"✅ 管理员 {operator_id} 已向用户 {target_user_id} 补偿 {lure_name} x{qty}"
 
 
 def my_info(user_id):
