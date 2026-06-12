@@ -4,7 +4,6 @@
 
 import openpyxl
 import os
-import yaml
 from .database import get_db
 
 
@@ -65,12 +64,12 @@ def export_fish_to_yaml(filepath="fish_data.yaml"):
         f.write("# bait 为空表示任何鱼饵都能上钩\n\n")
         f.write("fishes:\n")
         for fish in fish_list:
-            f.write(f"  - name: \"{fish['name']}\"\n")
-            f.write(f"    region: \"{fish['region']}\"\n")
-            f.write(f"    fishing_ground: \"{fish['fishing_ground']}\"\n")
-            f.write(f"    bait: \"{fish['bait']}\"\n")
-            f.write(f"    weather: \"{fish['weather']}\"\n")
-            f.write(f"    fish_type: \"{fish['fish_type']}\"\n")
+            f.write(f'  - name: "{fish["name"]}"\n')
+            f.write(f'    region: "{fish["region"]}"\n')
+            f.write(f'    fishing_ground: "{fish["fishing_ground"]}"\n')
+            f.write(f'    bait: "{fish["bait"]}"\n')
+            f.write(f'    weather: "{fish["weather"]}"\n')
+            f.write(f'    fish_type: "{fish["fish_type"]}"\n')
             f.write(f"    min_size: {fish['min_size']}\n")
             f.write(f"    min_big_size: {fish['min_big_size']}\n")
             f.write(f"    max_size: {fish['max_size']}\n")
@@ -88,7 +87,7 @@ def export_lure_to_yaml(filepath="lure_data.yaml"):
         f.write("lures:\n")
         for lure in lure_list:
             price_str = lure["price"] if lure["price"] is not None else "null"
-            f.write(f"  - name: \"{lure['name']}\"\n")
+            f.write(f'  - name: "{lure["name"]}"\n')
             f.write(f"    sellable: {'true' if lure['sellable'] else 'false'}\n")
             f.write(f"    price: {price_str}\n")
     print(f"✅ 鱼饵数据已导出到 {output}")
@@ -108,6 +107,7 @@ def init_game_data():
     print(f"已导入 {len(lure_list)} 条鱼饵数据")
     print("正在生成天气数据...")
     from datetime import date, timedelta
+
     today = date.today()
     for i in range(4):
         d = (today + timedelta(days=i)).isoformat()

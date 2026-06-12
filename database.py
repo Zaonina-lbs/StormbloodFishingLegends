@@ -9,7 +9,9 @@ import yaml
 
 
 def load_config():
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
+    config_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "config.yaml"
+    )
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -26,7 +28,9 @@ class Database:
             if data_dir:
                 db_path = os.path.join(data_dir, "fishing_game.db")
             else:
-                db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), db_path)
+                db_path = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), db_path
+                )
         # ensure parent directory exists
         parent = os.path.dirname(db_path)
         if parent and not os.path.exists(parent):
@@ -58,6 +62,7 @@ class Database:
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
                 last_sign_date TEXT DEFAULT NULL,
                 last_fishing_time TEXT DEFAULT NULL,
+                last_fishing_count INTEGER DEFAULT NULL,
                 PRIMARY KEY (user_id, group_id)
             )
         """)
@@ -145,14 +150,31 @@ class Database:
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
             )
         """)
-        c.execute("CREATE INDEX IF NOT EXISTS idx_fc_user ON fish_caught(user_id,group_id,is_sold)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_fl_user ON fishing_log(user_id,group_id,catch_time)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_inv_user ON inventory(user_id,group_id,lure_name)")
-        c.execute("CREATE INDEX IF NOT EXISTS idx_weather_date ON weather(weather_date,slot)")
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS idx_fc_user ON fish_caught(user_id,group_id,is_sold)"
+        )
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS idx_fl_user ON fishing_log(user_id,group_id,catch_time)"
+        )
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS idx_inv_user ON inventory(user_id,group_id,lure_name)"
+        )
+        c.execute(
+            "CREATE INDEX IF NOT EXISTS idx_weather_date ON weather(weather_date,slot)"
+        )
 
         # 迁移：为已有的 users 表添加 last_fishing_time 列（如果不存在）
         try:
-            c.execute("ALTER TABLE users ADD COLUMN last_fishing_time TEXT DEFAULT NULL")
+            c.execute(
+                "ALTER TABLE users ADD COLUMN last_fishing_time TEXT DEFAULT NULL"
+            )
+        except sqlite3.OperationalError:
+            pass  # 列已存在
+        # 迁移：为已有的 users 表添加 last_fishing_count 列（如果不存在）
+        try:
+            c.execute(
+                "ALTER TABLE users ADD COLUMN last_fishing_count INTEGER DEFAULT NULL"
+            )
         except sqlite3.OperationalError:
             pass  # 列已存在
 
@@ -161,7 +183,16 @@ class Database:
 
     def reset_database(self):
         self.connect()
-        tables = ["fishing_log","fish_caught","inventory","weather","krypton_log","lures","fish_base","users"]
+        tables = [
+            "fishing_log",
+            "fish_caught",
+            "inventory",
+            "weather",
+            "krypton_log",
+            "lures",
+            "fish_base",
+            "users",
+        ]
         for t in tables:
             self.conn.execute(f"DROP TABLE IF EXISTS {t}")
         self.conn.commit()
@@ -174,9 +205,18 @@ class Database:
         for fish in fish_list:
             self.conn.execute(
                 "INSERT INTO fish_base(name,region,fishing_ground,bait,weather,fish_type,min_size,min_big_size,max_size,base_value) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                (fish["name"],fish["region"],fish["fishing_ground"],fish.get("bait",""),
-                 fish.get("weather",""),fish["fish_type"],fish["min_size"],fish["min_big_size"],
-                 fish["max_size"],fish.get("base_value",50))
+                (
+                    fish["name"],
+                    fish["region"],
+                    fish["fishing_ground"],
+                    fish.get("bait", ""),
+                    fish.get("weather", ""),
+                    fish["fish_type"],
+                    fish["min_size"],
+                    fish["min_big_size"],
+                    fish["max_size"],
+                    fish.get("base_value", 50),
+                ),
             )
         self.conn.commit()
         self.close()
@@ -185,9 +225,12 @@ class Database:
         self.connect()
         self.conn.execute("DELETE FROM lures")
         for lure in lure_list:
-            sellable = 1 if lure.get("sellable",False) else 0
+            sellable = 1 if lure.get("sellable", False) else 0
             price = lure.get("price") if lure.get("price") is not None else 0
-            self.conn.execute("INSERT INTO lures(name,sellable,price) VALUES(?,?,?)",(lure["name"],sellable,price))
+            self.conn.execute(
+                "INSERT INTO lures(name,sellable,price) VALUES(?,?,?)",
+                (lure["name"], sellable, price),
+            )
         self.conn.commit()
         self.close()
 
@@ -195,173 +238,271 @@ class Database:
     def create_user(self, user_id, group_id):
         self.connect()
         config = load_config()
-        ig = config.get("initial_gold",2000)
+        ig = config.get("initial_gold", 2000)
         try:
-            self.conn.execute("INSERT INTO users(user_id,group_id,gold) VALUES(?,?,?)",(user_id,group_id,ig))
+            self.conn.execute(
+                "INSERT INTO users(user_id,group_id,gold) VALUES(?,?,?)",
+                (user_id, group_id, ig),
+            )
             self.conn.commit()
-            return True,f"注册成功！初始金币：{ig}"
+            return True, f"注册成功！初始金币：{ig}"
         except sqlite3.IntegrityError:
-            return False,"该用户已在本群注册"
+            return False, "该用户已在本群注册"
         finally:
             self.close()
 
-    def get_user(self,user_id,group_id):
+    def get_user(self, user_id, group_id):
         self.connect()
-        row=self.conn.execute("SELECT * FROM users WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT * FROM users WHERE user_id=? AND group_id=?", (user_id, group_id)
+        ).fetchone()
         self.close()
         return dict(row) if row else None
 
-    def update_user_gold(self,user_id,group_id,delta):
+    def update_user_gold(self, user_id, group_id, delta):
         self.connect()
-        self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(delta,user_id,group_id))
+        self.conn.execute(
+            "UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",
+            (delta, user_id, group_id),
+        )
         self.conn.commit()
-        row=self.conn.execute("SELECT * FROM users WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT * FROM users WHERE user_id=? AND group_id=?", (user_id, group_id)
+        ).fetchone()
         self.close()
         return dict(row) if row else None
 
-    def set_default_bait(self,user_id,group_id,bait_name):
+    def set_default_bait(self, user_id, group_id, bait_name):
         self.connect()
-        self.conn.execute("UPDATE users SET default_bait=? WHERE user_id=? AND group_id=?",(bait_name,user_id,group_id))
+        self.conn.execute(
+            "UPDATE users SET default_bait=? WHERE user_id=? AND group_id=?",
+            (bait_name, user_id, group_id),
+        )
         self.conn.commit()
         self.close()
 
-    def get_default_bait(self,user_id,group_id):
+    def get_default_bait(self, user_id, group_id):
         self.connect()
-        row=self.conn.execute("SELECT default_bait FROM users WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT default_bait FROM users WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchone()
         self.close()
         return row["default_bait"] if row else None
 
-    def update_sign_date(self,user_id,group_id):
+    def update_sign_date(self, user_id, group_id):
         self.connect()
-        self.conn.execute("UPDATE users SET last_sign_date=? WHERE user_id=? AND group_id=?",(date.today().isoformat(),user_id,group_id))
+        self.conn.execute(
+            "UPDATE users SET last_sign_date=? WHERE user_id=? AND group_id=?",
+            (date.today().isoformat(), user_id, group_id),
+        )
         self.conn.commit()
         self.close()
 
-    def get_last_sign_date(self,user_id,group_id):
+    def get_last_sign_date(self, user_id, group_id):
         self.connect()
-        row=self.conn.execute("SELECT last_sign_date FROM users WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT last_sign_date FROM users WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchone()
         self.close()
         return row["last_sign_date"] if row else None
 
     # ---- fishing CD ----
-    def update_fishing_time(self, user_id, group_id):
-        """更新玩家最后钓鱼时间为当前时间"""
+    def update_fishing_time(self, user_id, group_id, count=1):
+        """更新玩家最后钓鱼时间和钓鱼次数"""
         self.connect()
-        self.conn.execute("UPDATE users SET last_fishing_time=datetime('now','localtime') WHERE user_id=? AND group_id=?", (user_id, group_id))
+        self.conn.execute(
+            "UPDATE users SET last_fishing_time=datetime('now','localtime'), last_fishing_count=? WHERE user_id=? AND group_id=?",
+            (count, user_id, group_id),
+        )
         self.conn.commit()
         self.close()
 
     def get_last_fishing_time(self, user_id, group_id):
         """获取玩家最后钓鱼时间"""
         self.connect()
-        row = self.conn.execute("SELECT last_fishing_time FROM users WHERE user_id=? AND group_id=?", (user_id, group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT last_fishing_time FROM users WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchone()
         self.close()
         return row["last_fishing_time"] if row else None
 
-    # ---- inventory ----
-    def add_lure(self,user_id,group_id,lure_name,qty=1):
+    def get_last_fishing_count(self, user_id, group_id):
+        """获取玩家上次钓鱼的次数（用于CD计算）"""
         self.connect()
-        self.conn.execute("INSERT INTO inventory(user_id,group_id,lure_name,quantity) VALUES(?,?,?,?) ON CONFLICT(user_id,group_id,lure_name) DO UPDATE SET quantity=quantity+?",(user_id,group_id,lure_name,qty,qty))
+        row = self.conn.execute(
+            "SELECT last_fishing_count FROM users WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchone()
+        self.close()
+        return row["last_fishing_count"] if row else None
+
+    # ---- inventory ----
+    def add_lure(self, user_id, group_id, lure_name, qty=1):
+        self.connect()
+        self.conn.execute(
+            "INSERT INTO inventory(user_id,group_id,lure_name,quantity) VALUES(?,?,?,?) ON CONFLICT(user_id,group_id,lure_name) DO UPDATE SET quantity=quantity+?",
+            (user_id, group_id, lure_name, qty, qty),
+        )
         self.conn.commit()
         self.close()
 
-    def remove_lure(self,user_id,group_id,lure_name,qty=1):
+    def remove_lure(self, user_id, group_id, lure_name, qty=1):
         self.connect()
-        row=self.conn.execute("SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",(user_id,group_id,lure_name)).fetchone()
-        if not row or row["quantity"]<qty:
+        row = self.conn.execute(
+            "SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",
+            (user_id, group_id, lure_name),
+        ).fetchone()
+        if not row or row["quantity"] < qty:
             self.close()
             return False
-        nq=row["quantity"]-qty
-        if nq<=0:
-            self.conn.execute("DELETE FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",(user_id,group_id,lure_name))
+        nq = row["quantity"] - qty
+        if nq <= 0:
+            self.conn.execute(
+                "DELETE FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",
+                (user_id, group_id, lure_name),
+            )
         else:
-            self.conn.execute("UPDATE inventory SET quantity=? WHERE user_id=? AND group_id=? AND lure_name=?",(nq,user_id,group_id,lure_name))
+            self.conn.execute(
+                "UPDATE inventory SET quantity=? WHERE user_id=? AND group_id=? AND lure_name=?",
+                (nq, user_id, group_id, lure_name),
+            )
         self.conn.commit()
         self.close()
         return True
 
-    def get_inventory(self,user_id,group_id):
+    def get_inventory(self, user_id, group_id):
         self.connect()
-        rows=self.conn.execute("SELECT lure_name,quantity FROM inventory WHERE user_id=? AND group_id=? AND quantity>0",(user_id,group_id)).fetchall()
+        rows = self.conn.execute(
+            "SELECT lure_name,quantity FROM inventory WHERE user_id=? AND group_id=? AND quantity>0",
+            (user_id, group_id),
+        ).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def check_lure(self,user_id,group_id,lure_name):
+    def check_lure(self, user_id, group_id, lure_name):
         self.connect()
-        row=self.conn.execute("SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",(user_id,group_id,lure_name)).fetchone()
+        row = self.conn.execute(
+            "SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",
+            (user_id, group_id, lure_name),
+        ).fetchone()
         self.close()
-        return row and row["quantity"]>0
+        return row and row["quantity"] > 0
 
     # ---- fish caught ----
-    def add_caught(self,user_id,group_id,fish_name,fish_type,size,is_big,value,locked=0):
+    def add_caught(
+        self, user_id, group_id, fish_name, fish_type, size, is_big, value, locked=0
+    ):
         self.connect()
-        cur=self.conn.cursor()
-        cur.execute("INSERT INTO fish_caught(user_id,group_id,fish_name,fish_type,size,is_big,value,locked) VALUES(?,?,?,?,?,?,?,?)",
-                    (user_id,group_id,fish_name,fish_type,size,is_big,value,locked))
-        fid=cur.lastrowid
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO fish_caught(user_id,group_id,fish_name,fish_type,size,is_big,value,locked) VALUES(?,?,?,?,?,?,?,?)",
+            (user_id, group_id, fish_name, fish_type, size, is_big, value, locked),
+        )
+        fid = cur.lastrowid
         self.conn.commit()
         self.close()
         return fid
 
-    def get_pond(self,user_id,group_id,page=1,page_size=10):
+    def get_pond(self, user_id, group_id, page=1, page_size=10):
         self.connect()
-        offset=(page-1)*page_size
-        rows=self.conn.execute("SELECT * FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0 ORDER BY caught_time DESC LIMIT ? OFFSET ?",(user_id,group_id,page_size,offset)).fetchall()
-        total=self.conn.execute("SELECT COUNT(*) as cnt FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0",(user_id,group_id)).fetchone()["cnt"]
+        offset = (page - 1) * page_size
+        rows = self.conn.execute(
+            "SELECT * FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0 ORDER BY caught_time DESC LIMIT ? OFFSET ?",
+            (user_id, group_id, page_size, offset),
+        ).fetchall()
+        total = self.conn.execute(
+            "SELECT COUNT(*) as cnt FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0",
+            (user_id, group_id),
+        ).fetchone()["cnt"]
         self.close()
-        return [dict(r) for r in rows],total
+        return [dict(r) for r in rows], total
 
-    def lock_fish(self,fish_id,user_id,group_id):
+    def lock_fish(self, fish_id, user_id, group_id):
         self.connect()
-        self.conn.execute("UPDATE fish_caught SET locked=1 WHERE id=? AND user_id=? AND group_id=?",(fish_id,user_id,group_id))
+        self.conn.execute(
+            "UPDATE fish_caught SET locked=1 WHERE id=? AND user_id=? AND group_id=?",
+            (fish_id, user_id, group_id),
+        )
         self.conn.commit()
         self.close()
 
-    def unlock_fish(self,fish_id,user_id,group_id):
+    def unlock_fish(self, fish_id, user_id, group_id):
         self.connect()
-        self.conn.execute("UPDATE fish_caught SET locked=0 WHERE id=? AND user_id=? AND group_id=?",(fish_id,user_id,group_id))
+        self.conn.execute(
+            "UPDATE fish_caught SET locked=0 WHERE id=? AND user_id=? AND group_id=?",
+            (fish_id, user_id, group_id),
+        )
         self.conn.commit()
         self.close()
 
-    def sell_by_name(self,user_id,group_id,fish_name):
+    def sell_by_name(self, user_id, group_id, fish_name):
         self.connect()
-        rows=self.conn.execute("SELECT id,value FROM fish_caught WHERE user_id=? AND group_id=? AND fish_name=? AND locked=0 AND is_sold=0",(user_id,group_id,fish_name)).fetchall()
-        if not rows: self.close(); return 0,0
-        total=sum(r["value"] for r in rows)
-        ids=[r["id"] for r in rows]
-        ph=",".join("?"*len(ids))
-        self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})",ids)
-        self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(total,user_id,group_id))
+        rows = self.conn.execute(
+            "SELECT id,value FROM fish_caught WHERE user_id=? AND group_id=? AND fish_name=? AND locked=0 AND is_sold=0",
+            (user_id, group_id, fish_name),
+        ).fetchall()
+        if not rows:
+            self.close()
+            return 0, 0
+        total = sum(r["value"] for r in rows)
+        ids = [r["id"] for r in rows]
+        ph = ",".join("?" * len(ids))
+        self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})", ids)
+        self.conn.execute(
+            "UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",
+            (total, user_id, group_id),
+        )
         # 如果该鱼也是鱼饵，从背包中清除对应数量
         if self._is_lure_name(fish_name):
             self._remove_lure_silent(user_id, group_id, fish_name, len(ids))
         self.conn.commit()
         self.close()
-        return len(ids),total
+        return len(ids), total
 
-    def sell_by_id(self,user_id,group_id,fish_id):
+    def sell_by_id(self, user_id, group_id, fish_id):
         self.connect()
-        row=self.conn.execute("SELECT id,fish_name,value,locked FROM fish_caught WHERE id=? AND user_id=? AND group_id=? AND is_sold=0",(fish_id,user_id,group_id)).fetchone()
-        if not row: self.close(); return None,"未找到该鱼"
-        if row["locked"]: self.close(); return None,f"{row['fish_name']} 已锁定"
-        self.conn.execute("UPDATE fish_caught SET is_sold=1 WHERE id=?",(fish_id,))
-        self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(row["value"],user_id,group_id))
+        row = self.conn.execute(
+            "SELECT id,fish_name,value,locked FROM fish_caught WHERE id=? AND user_id=? AND group_id=? AND is_sold=0",
+            (fish_id, user_id, group_id),
+        ).fetchone()
+        if not row:
+            self.close()
+            return None, "未找到该鱼"
+        if row["locked"]:
+            self.close()
+            return None, f"{row['fish_name']} 已锁定"
+        self.conn.execute("UPDATE fish_caught SET is_sold=1 WHERE id=?", (fish_id,))
+        self.conn.execute(
+            "UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",
+            (row["value"], user_id, group_id),
+        )
         # 如果该鱼也是鱼饵，从背包中清除
         if self._is_lure_name(row["fish_name"]):
             self._remove_lure_silent(user_id, group_id, row["fish_name"], 1)
         self.conn.commit()
         self.close()
-        return row["value"],row["fish_name"]
+        return row["value"], row["fish_name"]
 
-    def sell_all(self,user_id,group_id):
+    def sell_all(self, user_id, group_id):
         self.connect()
-        rows=self.conn.execute("SELECT id,fish_name,value FROM fish_caught WHERE user_id=? AND group_id=? AND locked=0 AND is_sold=0",(user_id,group_id)).fetchall()
-        if not rows: self.close(); return 0,0
-        total=sum(r["value"] for r in rows)
-        ids=[r["id"] for r in rows]
-        ph=",".join("?"*len(ids))
-        self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})",ids)
-        self.conn.execute("UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",(total,user_id,group_id))
+        rows = self.conn.execute(
+            "SELECT id,fish_name,value FROM fish_caught WHERE user_id=? AND group_id=? AND locked=0 AND is_sold=0",
+            (user_id, group_id),
+        ).fetchall()
+        if not rows:
+            self.close()
+            return 0, 0
+        total = sum(r["value"] for r in rows)
+        ids = [r["id"] for r in rows]
+        ph = ",".join("?" * len(ids))
+        self.conn.execute(f"UPDATE fish_caught SET is_sold=1 WHERE id IN ({ph})", ids)
+        self.conn.execute(
+            "UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",
+            (total, user_id, group_id),
+        )
         # 统计需从背包清除的鱼饵类鱼种
         lure_counts = {}
         for r in rows:
@@ -372,106 +513,158 @@ class Database:
             self._remove_lure_silent(user_id, group_id, name, qty)
         self.conn.commit()
         self.close()
-        return len(ids),total
+        return len(ids), total
 
-    def get_caught_by_id(self,fish_id,user_id,group_id):
+    def get_caught_by_id(self, fish_id, user_id, group_id):
         self.connect()
-        row=self.conn.execute("SELECT * FROM fish_caught WHERE id=? AND user_id=? AND group_id=?",(fish_id,user_id,group_id)).fetchone()
+        row = self.conn.execute(
+            "SELECT * FROM fish_caught WHERE id=? AND user_id=? AND group_id=?",
+            (fish_id, user_id, group_id),
+        ).fetchone()
         self.close()
         return dict(row) if row else None
 
     # ---- fishing log ----
-    def add_log(self,user_id,group_id,fish_name,fish_type,size,is_big,value,bait_used,fishing_ground,weather):
+    def add_log(
+        self,
+        user_id,
+        group_id,
+        fish_name,
+        fish_type,
+        size,
+        is_big,
+        value,
+        bait_used,
+        fishing_ground,
+        weather,
+    ):
         self.connect()
-        self.conn.execute("INSERT INTO fishing_log(user_id,group_id,fish_name,fish_type,size,is_big,value,bait_used,fishing_ground,weather) VALUES(?,?,?,?,?,?,?,?,?,?)",
-                          (user_id,group_id,fish_name,fish_type,size,is_big,value,bait_used,fishing_ground,weather))
+        self.conn.execute(
+            "INSERT INTO fishing_log(user_id,group_id,fish_name,fish_type,size,is_big,value,bait_used,fishing_ground,weather) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (
+                user_id,
+                group_id,
+                fish_name,
+                fish_type,
+                size,
+                is_big,
+                value,
+                bait_used,
+                fishing_ground,
+                weather,
+            ),
+        )
         self.conn.commit()
         self.close()
 
-    def get_log(self,user_id,group_id,page=1,page_size=10):
+    def get_log(self, user_id, group_id, page=1, page_size=10):
         self.connect()
-        offset=(page-1)*page_size
-        rows=self.conn.execute("SELECT * FROM fishing_log WHERE user_id=? AND group_id=? ORDER BY catch_time DESC LIMIT ? OFFSET ?",(user_id,group_id,page_size,offset)).fetchall()
-        total=self.conn.execute("SELECT COUNT(*) as cnt FROM fishing_log WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchone()["cnt"]
+        offset = (page - 1) * page_size
+        rows = self.conn.execute(
+            "SELECT * FROM fishing_log WHERE user_id=? AND group_id=? ORDER BY catch_time DESC LIMIT ? OFFSET ?",
+            (user_id, group_id, page_size, offset),
+        ).fetchall()
+        total = self.conn.execute(
+            "SELECT COUNT(*) as cnt FROM fishing_log WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchone()["cnt"]
         self.close()
-        return [dict(r) for r in rows],total
+        return [dict(r) for r in rows], total
 
     # ---- fish query ----
     def get_all_fish(self):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM fish_base").fetchall()
+        rows = self.conn.execute("SELECT * FROM fish_base").fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_fish_by_name(self,name):
+    def get_fish_by_name(self, name):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM fish_base WHERE name=?",(name,)).fetchall()
+        rows = self.conn.execute(
+            "SELECT * FROM fish_base WHERE name=?", (name,)
+        ).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_fish_by_bait(self,bait,weather_type=None,fishing_ground=None):
+    def get_fish_by_bait(self, bait, weather_type=None, fishing_ground=None):
         self.connect()
         if bait:
             # 支持多鱼饵：bait 字段可能为 "蓝矶沙蚕/苦尔鳗" 格式
             # 匹配条件：bait 为空(通杀)、bait 完全匹配、bait 以 "/" 分隔包含当前饵
-            query="SELECT * FROM fish_base WHERE (bait=? OR bait='' OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)"
-            params=[
+            query = "SELECT * FROM fish_base WHERE (bait=? OR bait='' OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)"
+            params = [
                 bait,
-                bait + "/%",       # bait 开头段匹配：如 "蓝矶沙蚕/..."
-                "%/" + bait,       # bait 末尾段匹配：如 ".../蓝矶沙蚕"
-                "%/" + bait + "/%" # bait 中间段匹配：如 ".../蓝矶沙蚕/..."
+                bait + "/%",  # bait 开头段匹配：如 "蓝矶沙蚕/..."
+                "%/" + bait,  # bait 末尾段匹配：如 ".../蓝矶沙蚕"
+                "%/" + bait + "/%",  # bait 中间段匹配：如 ".../蓝矶沙蚕/..."
             ]
         else:
-            query="SELECT * FROM fish_base WHERE 1=1"
-            params=[]
+            query = "SELECT * FROM fish_base WHERE 1=1"
+            params = []
         if weather_type:
-            query+=" AND (weather='' OR weather LIKE ?)"
+            query += " AND (weather='' OR weather LIKE ?)"
             params.append(f"%{weather_type}%")
         else:
-            query+=" AND weather=''"
+            query += " AND weather=''"
         if fishing_ground:
-            query+=" AND fishing_ground=?"
+            query += " AND fishing_ground=?"
             params.append(fishing_ground)
-        rows=self.conn.execute(query,params).fetchall()
+        rows = self.conn.execute(query, params).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_fish_by_ground(self,fishing_ground,weather_type=None):
+    def get_fish_by_ground(self, fishing_ground, weather_type=None):
         self.connect()
-        query="SELECT * FROM fish_base WHERE fishing_ground=?"
-        params=[fishing_ground]
+        query = "SELECT * FROM fish_base WHERE fishing_ground=?"
+        params = [fishing_ground]
         if weather_type:
-            query+=" AND (weather='' OR weather LIKE ?)"
+            query += " AND (weather='' OR weather LIKE ?)"
             params.append(f"%{weather_type}%")
         else:
-            query+=" AND weather=''"
-        rows=self.conn.execute(query,params).fetchall()
+            query += " AND weather=''"
+        rows = self.conn.execute(query, params).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_caught_names(self,user_id,group_id):
+    def get_caught_names(self, user_id, group_id):
         self.connect()
-        rows=self.conn.execute("SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?",(user_id,group_id)).fetchall()
+        rows = self.conn.execute(
+            "SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?",
+            (user_id, group_id),
+        ).fetchall()
         self.close()
         return {r["fish_name"] for r in rows}
 
     # ---- leaderboard ----
-    def get_leaderboard(self,group_id,fish_name,order="DESC"):
-        config=load_config()
-        limit=config.get("leaderboard_size",10)
+    def get_leaderboard(self, group_id, fish_name, order="DESC"):
+        config = load_config()
+        limit = config.get("leaderboard_size", 10)
         self.connect()
-        order_clause="DESC" if order=="DESC" else "ASC"
-        rows=self.conn.execute(f"SELECT user_id,fish_name,size,catch_time FROM fishing_log WHERE group_id=? AND fish_name=? ORDER BY size {order_clause} LIMIT ?",(group_id,fish_name,limit)).fetchall()
+        order_clause = "DESC" if order == "DESC" else "ASC"
+        rows = self.conn.execute(
+            f"SELECT user_id,fish_name,size,catch_time FROM fishing_log WHERE group_id=? AND fish_name=? ORDER BY size {order_clause} LIMIT ?",
+            (group_id, fish_name, limit),
+        ).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_extreme(self,group_id,fish_name):
+    def get_extreme(self, group_id, fish_name):
         self.connect()
-        max_r=self.conn.execute("SELECT user_id,MAX(size) as size FROM fishing_log WHERE group_id=? AND fish_name=? GROUP BY fish_name",(group_id,fish_name)).fetchone()
-        min_r=self.conn.execute("SELECT user_id,MIN(size) as size FROM fishing_log WHERE group_id=? AND fish_name=? GROUP BY fish_name",(group_id,fish_name)).fetchone()
+        max_r = self.conn.execute(
+            "SELECT user_id,MAX(size) as size FROM fishing_log WHERE group_id=? AND fish_name=? GROUP BY fish_name",
+            (group_id, fish_name),
+        ).fetchone()
+        min_r = self.conn.execute(
+            "SELECT user_id,MIN(size) as size FROM fishing_log WHERE group_id=? AND fish_name=? GROUP BY fish_name",
+            (group_id, fish_name),
+        ).fetchone()
         self.close()
-        return {"max_user":max_r["user_id"] if max_r else None,"max_size":max_r["size"] if max_r else None,
-                "min_user":min_r["user_id"] if min_r else None,"min_size":min_r["size"] if min_r else None}
+        return {
+            "max_user": max_r["user_id"] if max_r else None,
+            "max_size": max_r["size"] if max_r else None,
+            "min_user": min_r["user_id"] if min_r else None,
+            "min_size": min_r["size"] if min_r else None,
+        }
 
     # ---- weather ----
     # 天气每12小时变更一次，每日下午6点切换 (slot=0: 00:00-17:59, slot=1: 18:00-23:59)
@@ -479,132 +672,170 @@ class Database:
     @staticmethod
     def _current_slot():
         """返回当前所属的天气时段: 0=上午(00:00-17:59), 1=下午(18:00-23:59)"""
-        from datetime import datetime
         return 1 if datetime.now().hour >= 18 else 0
 
-    def generate_weather(self,weather_date,slot,weather_type=None):
+    def generate_weather(self, weather_date, slot, weather_type=None):
         if weather_type is None:
             import random
-            config=load_config()
-            wts=config.get("weather_types",["晴朗"])
-            weather_type=random.choice(wts)
+
+            config = load_config()
+            wts = config.get("weather_types", ["晴朗"])
+            weather_type = random.choice(wts)
         self.connect()
         try:
-            self.conn.execute("INSERT INTO weather(weather_date,slot,weather_type) VALUES(?,?,?)",(weather_date,slot,weather_type))
+            self.conn.execute(
+                "INSERT INTO weather(weather_date,slot,weather_type) VALUES(?,?,?)",
+                (weather_date, slot, weather_type),
+            )
             self.conn.commit()
         except sqlite3.IntegrityError:
             pass
         self.close()
         return weather_type
 
-    def get_weather(self,start_date=None,days=4):
+    def get_weather(self, start_date=None, days=4):
         from datetime import date as dt, timedelta
+
         if start_date is None:
-            start_date=dt.today().isoformat()
-        sd=dt.fromisoformat(start_date)
-        dates=[(sd+timedelta(days=i)).isoformat() for i in range(days)]
+            start_date = dt.today().isoformat()
+        sd = dt.fromisoformat(start_date)
+        dates = [(sd + timedelta(days=i)).isoformat() for i in range(days)]
         self.connect()
-        ph=",".join("?"*len(dates))
-        rows=self.conn.execute(f"SELECT weather_date,slot,weather_type FROM weather WHERE weather_date IN ({ph}) ORDER BY weather_date,slot",dates).fetchall()
+        ph = ",".join("?" * len(dates))
+        rows = self.conn.execute(
+            f"SELECT weather_date,slot,weather_type FROM weather WHERE weather_date IN ({ph}) ORDER BY weather_date,slot",
+            dates,
+        ).fetchall()
         self.close()
-        wmap={}
+        wmap = {}
         for r in rows:
-            wmap.setdefault(r["weather_date"],{})[r["slot"]]=r["weather_type"]
-        result=[]
+            wmap.setdefault(r["weather_date"], {})[r["slot"]] = r["weather_type"]
+        result = []
         for d in dates:
-            for slot in (0,1):
-                key=(d,slot)
-                if d not in wmap or slot not in wmap.get(d,{}):
+            for slot in (0, 1):
+                if d not in wmap or slot not in wmap.get(d, {}):
                     if d not in wmap:
-                        wmap[d]={}
-                    wmap[d][slot]=self.generate_weather(d,slot)
-                wtype=wmap[d][slot]
-                label="白天" if slot==0 else "晚上"
-                result.append({"date":d,"slot":slot,"label":f"{d} {label}","weather":wtype})
+                        wmap[d] = {}
+                    wmap[d][slot] = self.generate_weather(d, slot)
+                wtype = wmap[d][slot]
+                label = "白天" if slot == 0 else "晚上"
+                result.append(
+                    {"date": d, "slot": slot, "label": f"{d} {label}", "weather": wtype}
+                )
         return result
 
     def get_today_weather(self):
         """返回当前时段的天气"""
         from datetime import date as dt
-        today=dt.today().isoformat()
-        slot=self._current_slot()
+
+        today = dt.today().isoformat()
+        slot = self._current_slot()
         self.connect()
-        row=self.conn.execute("SELECT weather_type FROM weather WHERE weather_date=? AND slot=?",(today,slot)).fetchone()
+        row = self.conn.execute(
+            "SELECT weather_type FROM weather WHERE weather_date=? AND slot=?",
+            (today, slot),
+        ).fetchone()
         self.close()
         if row:
-            return {"date":today,"slot":slot,"weather":row["weather_type"]}
-        return {"date":today,"slot":slot,"weather":self.generate_weather(today,slot)}
+            return {"date": today, "slot": slot, "weather": row["weather_type"]}
+        return {
+            "date": today,
+            "slot": slot,
+            "weather": self.generate_weather(today, slot),
+        }
 
-    def set_weather(self,weather_date,slot,weather_type):
+    def set_weather(self, weather_date, slot, weather_type):
         self.connect()
-        self.conn.execute("INSERT OR REPLACE INTO weather(weather_date,slot,weather_type,created_at) VALUES(?,?,?,datetime('now','localtime'))",(weather_date,slot,weather_type))
+        self.conn.execute(
+            "INSERT OR REPLACE INTO weather(weather_date,slot,weather_type,created_at) VALUES(?,?,?,datetime('now','localtime'))",
+            (weather_date, slot, weather_type),
+        )
         self.conn.commit()
         self.close()
 
     # ---- shop ----
     def get_shop_lures(self):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM lures WHERE sellable=1").fetchall()
+        rows = self.conn.execute("SELECT * FROM lures WHERE sellable=1").fetchall()
         self.close()
         return [dict(r) for r in rows]
 
-    def get_lure_by_name(self,name):
+    def get_lure_by_name(self, name):
         self.connect()
-        row=self.conn.execute("SELECT * FROM lures WHERE name=?",(name,)).fetchone()
+        row = self.conn.execute("SELECT * FROM lures WHERE name=?", (name,)).fetchone()
         self.close()
         return dict(row) if row else None
 
     def get_all_lures(self):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM lures").fetchall()
+        rows = self.conn.execute("SELECT * FROM lures").fetchall()
         self.close()
         return [dict(r) for r in rows]
 
     def is_fish_a_lure(self, fish_name):
         """检查鱼名是否也存在于鱼饵表中（即可作为鱼饵使用的鱼）"""
         self.connect()
-        row = self.conn.execute("SELECT name FROM lures WHERE name=?", (fish_name,)).fetchone()
+        row = self.conn.execute(
+            "SELECT name FROM lures WHERE name=?", (fish_name,)
+        ).fetchone()
         self.close()
         return row is not None
 
     def _is_lure_name(self, fish_name):
         """内部方法：在同一连接内判断鱼名是否也是鱼饵（不自带 connect/close）"""
-        row = self.conn.execute("SELECT name FROM lures WHERE name=?", (fish_name,)).fetchone()
+        row = self.conn.execute(
+            "SELECT name FROM lures WHERE name=?", (fish_name,)
+        ).fetchone()
         return row is not None
 
     def _remove_lure_silent(self, user_id, group_id, lure_name, qty=1):
         """内部方法：在同一连接内从背包移除鱼饵（不自带 connect/close），不清零则删除记录"""
-        row = self.conn.execute("SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?", (user_id, group_id, lure_name)).fetchone()
+        row = self.conn.execute(
+            "SELECT quantity FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",
+            (user_id, group_id, lure_name),
+        ).fetchone()
         if not row:
             return
         nq = row["quantity"] - qty
         if nq <= 0:
-            self.conn.execute("DELETE FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?", (user_id, group_id, lure_name))
+            self.conn.execute(
+                "DELETE FROM inventory WHERE user_id=? AND group_id=? AND lure_name=?",
+                (user_id, group_id, lure_name),
+            )
         else:
-            self.conn.execute("UPDATE inventory SET quantity=? WHERE user_id=? AND group_id=? AND lure_name=?", (nq, user_id, group_id, lure_name))
+            self.conn.execute(
+                "UPDATE inventory SET quantity=? WHERE user_id=? AND group_id=? AND lure_name=?",
+                (nq, user_id, group_id, lure_name),
+            )
 
     # ---- krypton ----
-    def add_krypton(self,user_id,group_id,amount):
+    def add_krypton(self, user_id, group_id, amount):
         self.connect()
-        self.conn.execute("INSERT INTO krypton_log(user_id,group_id,amount) VALUES(?,?,?)",(user_id,group_id,amount))
+        self.conn.execute(
+            "INSERT INTO krypton_log(user_id,group_id,amount) VALUES(?,?,?)",
+            (user_id, group_id, amount),
+        )
         self.conn.commit()
         self.close()
 
-    def get_krypton_log(self,user_id,group_id):
+    def get_krypton_log(self, user_id, group_id):
         self.connect()
-        rows=self.conn.execute("SELECT * FROM krypton_log WHERE user_id=? AND group_id=? ORDER BY created_at DESC",(user_id,group_id)).fetchall()
+        rows = self.conn.execute(
+            "SELECT * FROM krypton_log WHERE user_id=? AND group_id=? ORDER BY created_at DESC",
+            (user_id, group_id),
+        ).fetchall()
         self.close()
         return [dict(r) for r in rows]
 
     # ---- handbook ----
-    def get_handbook(self,user_id,group_id,region=None,fishing_ground=None):
+    def get_handbook(self, user_id, group_id, region=None, fishing_ground=None):
         """获取图鉴数据，支持按地区和/或钓场筛选。
         返回按 region→fishing_ground→fish_type→name 排序的列表，
         包含 bait、base_value、min_size、max_size 等信息。"""
         self.connect()
-        query="SELECT DISTINCT name,fish_type,region,fishing_ground,bait,weather,base_value,min_size,min_big_size,max_size FROM fish_base"
-        conditions=[]
-        params=[]
+        query = "SELECT DISTINCT name,fish_type,region,fishing_ground,bait,weather,base_value,min_size,min_big_size,max_size FROM fish_base"
+        conditions = []
+        params = []
         if region:
             conditions.append("region=?")
             params.append(region)
@@ -612,68 +843,77 @@ class Database:
             conditions.append("fishing_ground=?")
             params.append(fishing_ground)
         if conditions:
-            query+=" WHERE "+" AND ".join(conditions)
-        query+=" ORDER BY region, fishing_ground, fish_type, name"
-        bf=self.conn.execute(query,params).fetchall()
-        bf=[dict(r) for r in bf]
-        caught=set()
-        q="SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?"
-        cq_params=[user_id,group_id]
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY region, fishing_ground, fish_type, name"
+        bf = self.conn.execute(query, params).fetchall()
+        bf = [dict(r) for r in bf]
+        caught = set()
+        q = "SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?"
+        cq_params = [user_id, group_id]
         if region:
-            q+=" AND fishing_ground IN (SELECT DISTINCT fishing_ground FROM fish_base WHERE region=?)"
+            q += " AND fishing_ground IN (SELECT DISTINCT fishing_ground FROM fish_base WHERE region=?)"
             cq_params.append(region)
         if fishing_ground:
-            q+=" AND fishing_ground=?"
+            q += " AND fishing_ground=?"
             cq_params.append(fishing_ground)
-        rows=self.conn.execute(q,cq_params).fetchall()
-        caught={r["fish_name"] for r in rows}
+        rows = self.conn.execute(q, cq_params).fetchall()
+        caught = {r["fish_name"] for r in rows}
         self.close()
         for f in bf:
-            f["obtained"]=f["name"] in caught
+            f["obtained"] = f["name"] in caught
         return bf
 
     def get_distinct_regions(self):
         """获取所有不重复的区域列表"""
         self.connect()
-        rows=self.conn.execute("SELECT DISTINCT region FROM fish_base ORDER BY region").fetchall()
+        rows = self.conn.execute(
+            "SELECT DISTINCT region FROM fish_base ORDER BY region"
+        ).fetchall()
         self.close()
         return [r["region"] for r in rows]
 
     def get_distinct_grounds(self):
         """获取所有不重复的钓场列表"""
         self.connect()
-        rows=self.conn.execute("SELECT DISTINCT fishing_ground FROM fish_base ORDER BY fishing_ground").fetchall()
+        rows = self.conn.execute(
+            "SELECT DISTINCT fishing_ground FROM fish_base ORDER BY fishing_ground"
+        ).fetchall()
         self.close()
         return [r["fishing_ground"] for r in rows]
 
-    def get_handbook_user_ranking(self,group_id,fish_name,user_id=None):
+    def get_handbook_user_ranking(self, group_id, fish_name, user_id=None):
         """获取当前用户在某个鱼种的排行（按尺寸降序）"""
         self.connect()
         if user_id:
-            row=self.conn.execute("""
+            row = self.conn.execute(
+                """
                 SELECT COUNT(*)+1 as rank FROM fishing_log
                 WHERE group_id=? AND fish_name=? AND size > (
                     SELECT MAX(size) FROM fishing_log WHERE group_id=? AND fish_name=? AND user_id=?
                 )
-            """,(group_id,fish_name,group_id,fish_name,user_id)).fetchone()
+            """,
+                (group_id, fish_name, group_id, fish_name, user_id),
+            ).fetchone()
         else:
-            row={"rank":None}
+            row = {"rank": None}
         self.close()
         return row["rank"] if row else None
 
     # ---- hot reload ----
-    def reload_lure_data(self,lure_list):
+    def reload_lure_data(self, lure_list):
         """热更新鱼饵数据"""
         self.connect()
         for lure in lure_list:
-            sellable=1 if lure.get("sellable",False) else 0
-            price=lure.get("price") if lure.get("price") is not None else 0
-            self.conn.execute("INSERT OR REPLACE INTO lures(id,name,sellable,price) VALUES((SELECT id FROM lures WHERE name=?),?,?,?)",
-                              (lure["name"],lure["name"],sellable,price))
+            sellable = 1 if lure.get("sellable", False) else 0
+            price = lure.get("price") if lure.get("price") is not None else 0
+            self.conn.execute(
+                "INSERT OR REPLACE INTO lures(id,name,sellable,price) VALUES((SELECT id FROM lures WHERE name=?),?,?,?)",
+                (lure["name"], lure["name"], sellable, price),
+            )
         self.conn.commit()
         self.close()
 
-    def reload_fish_data(self,fish_list):
+    def reload_fish_data(self, fish_list):
         """热更新鱼基础数据，同步 bait、weather、fish_type、尺寸和基础价值等字段"""
         self.connect()
         for fish in fish_list:
@@ -688,23 +928,27 @@ class Database:
                     fish.get("max_size", 0),
                     fish.get("base_value", 50),
                     fish["name"],
-                )
+                ),
             )
         self.conn.commit()
         self.close()
 
 
-_db_instance=None
+_db_instance = None
+
+
 def get_db(db_path=None, data_dir=None):
     global _db_instance
     if _db_instance is None:
-        _db_instance=Database(db_path, data_dir=data_dir)
+        _db_instance = Database(db_path, data_dir=data_dir)
     return _db_instance
+
 
 def get_db_path():
     return get_db().db_path
 
+
 def init_db_with_path(db_path, data_dir=None):
     global _db_instance
-    _db_instance=Database(db_path, data_dir=data_dir)
+    _db_instance = Database(db_path, data_dir=data_dir)
     return _db_instance

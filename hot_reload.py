@@ -41,8 +41,8 @@ def show_fish_diff(current_fish, new_fish):
 def show_lure_diff(current_lures, new_lures):
     """对比并显示鱼饵数据变更"""
     changes = []
-    current_map = {l["name"]: l for l in current_lures}
-    new_map = {l["name"]: l for l in new_lures}
+    current_map = {lure["name"]: lure for lure in current_lures}
+    new_map = {lure["name"]: lure for lure in new_lures}
     for name, nl in new_map.items():
         cl = current_map.get(name)
         if cl is None:
@@ -63,7 +63,7 @@ def preview_reload(fish_file="fish_data.yaml", lure_file="lure_data.yaml"):
     """
     db = get_db()
     current_fish = {f["name"]: f for f in db.get_all_fish()}
-    current_lures = {l["name"]: l for l in db.get_all_lures()}
+    current_lures = {lure["name"]: lure for lure in db.get_all_lures()}
 
     new_fish = load_yaml_config(fish_file)
     new_lures = load_yaml_config(lure_file)
@@ -92,7 +92,9 @@ def do_reload(fish_file="fish_data.yaml", lure_file="lure_data.yaml", confirm=Fa
     Returns:
         (success, message)
     """
-    fish_changes, lure_changes, new_fish_list, new_lure_list = preview_reload(fish_file, lure_file)
+    fish_changes, lure_changes, new_fish_list, new_lure_list = preview_reload(
+        fish_file, lure_file
+    )
 
     if not fish_changes and not lure_changes:
         return True, "✅ 没有检测到数据变更"
@@ -125,6 +127,7 @@ def do_reload(fish_file="fish_data.yaml", lure_file="lure_data.yaml", confirm=Fa
 
     # 重新加载配置
     from . import game_engine
+
     game_engine._reload_config()
 
     return True, "✅ 热更新完成！"
@@ -132,11 +135,14 @@ def do_reload(fish_file="fish_data.yaml", lure_file="lure_data.yaml", confirm=Fa
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="游戏数据热更新")
     parser.add_argument("--preview", action="store_true", help="仅预览变更")
     parser.add_argument("--confirm", action="store_true", help="跳过二次确认")
     parser.add_argument("--fish", type=str, default="fish_data.yaml", help="鱼数据文件")
-    parser.add_argument("--lure", type=str, default="lure_data.yaml", help="鱼饵数据文件")
+    parser.add_argument(
+        "--lure", type=str, default="lure_data.yaml", help="鱼饵数据文件"
+    )
     args = parser.parse_args()
 
     if args.preview:

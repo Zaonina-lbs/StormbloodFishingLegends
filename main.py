@@ -1,7 +1,7 @@
 import os
 import shlex
 
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 
@@ -58,7 +58,12 @@ def parse_args(message_str: str):
     return parts
 
 
-@register("stormblood_fishing_legends", "Zaonina", "红莲垂钓异闻 - FF14群聊钓鱼小游戏", "v1.0.0")
+@register(
+    "stormblood_fishing_legends",
+    "Zaonina",
+    "红莲垂钓异闻 - FF14群聊钓鱼小游戏",
+    "v1.0.0",
+)
 class FishingPlugin(Star):
     def __init__(self, context: Context):
         super().__init__(context)
@@ -134,7 +139,13 @@ class FishingPlugin(Star):
         bait = args[1] if len(args) >= 2 else None
         fishing_ground = args[2] if len(args) >= 3 else None
         count = args[3] if len(args) >= 4 else None
-        result = go_fishing(user_id, group_id, bait_param=bait, fishing_ground=fishing_ground, count=count)
+        result = go_fishing(
+            user_id,
+            group_id,
+            bait_param=bait,
+            fishing_ground=fishing_ground,
+            count=count,
+        )
         yield event.plain_result(result)
 
     @filter.command("查看天气")
@@ -356,7 +367,9 @@ class FishingPlugin(Star):
         if page < 1:
             page = 1
 
-        result = fish_handbook(user_id, group_id, page=page, region=region, fishing_ground=fishing_ground)
+        result = fish_handbook(
+            user_id, group_id, page=page, region=region, fishing_ground=fishing_ground
+        )
         yield event.plain_result(result)
 
     @filter.command("钓鱼记录")
@@ -393,7 +406,9 @@ class FishingPlugin(Star):
         target_user_id = args[1] if len(args) >= 2 else None
         lure_name = args[2] if len(args) >= 3 else None
         quantity = args[3] if len(args) >= 4 else 1
-        result = compensate_lure(operator_id, group_id, target_user_id, lure_name, quantity)
+        result = compensate_lure(
+            operator_id, group_id, target_user_id, lure_name, quantity
+        )
         yield event.plain_result(result)
 
     @filter.command("修改天气")

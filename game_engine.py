@@ -3,10 +3,16 @@
 所有用户相关操作均需传入 group_id 以区分群聊
 """
 
+import logging
 import os
 import random
 import yaml
 from datetime import date, timedelta
+
+try:
+    logger = logging.getLogger("astrbot")
+except Exception:
+    logger = logging.getLogger(__name__)
 
 _config = None
 _db = None
@@ -14,7 +20,9 @@ _data_dir = None
 
 
 def _load_config():
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
+    config_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "config.yaml"
+    )
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
@@ -27,6 +35,7 @@ def _reload_config():
 def _init_db():
     global _db
     from .database import get_db
+
     if _db is None:
         _db = get_db(data_dir=_data_dir)
 
@@ -34,7 +43,7 @@ def _init_db():
 def init_engine(data_dir=None):
     """初始化游戏引擎，设置数据目录并创建/导入数据。
     在 AstrBot 插件中调用此函数设置数据库路径。
-    
+
     Args:
         data_dir: AstrBot 插件数据目录，数据库文件将存放在此目录下
     """
@@ -42,16 +51,21 @@ def init_engine(data_dir=None):
     _data_dir = data_dir
     _config = _load_config()
     from .database import init_db_with_path
+
     if data_dir:
         _db = init_db_with_path(None, data_dir=data_dir)
     else:
-        _db = get_db()
-    
+        from .database import get_db as _get_db
+
+        _db = _get_db()
+
     # 创建数据库表结构
     _db.init_database()
-    
+
     # 始终从 fish_data.yaml 同步鱼基础数据（删除重建，保证数据最新）
-    fish_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fish_data.yaml")
+    fish_data_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "fish_data.yaml"
+    )
     fish_data = _config.get("fishes", [])
     if os.path.exists(fish_data_path):
         with open(fish_data_path, "r", encoding="utf-8") as f:
@@ -61,32 +75,26 @@ def init_engine(data_dir=None):
     if fish_data:
         _db.import_fish_data(fish_data)
         logger.info(f"已同步 {len(fish_data)} 条鱼基础数据到数据库")
-    
+
     # 始终同步鱼饵数据（使用 upsert，不删除已有记录，保证用户背包数据不丢失）
     lures = _config.get("lures", [])
     if lures:
         _db.reload_lure_data(lures)
         logger.info(f"已校准 {len(lures)} 条鱼饵数据到数据库")
-    
+
     # 生成天气数据
-    from datetime import date as dt, timedelta
+    from datetime import date as dt
+
     today = dt.today()
     for i in range(4):
         d = (today + timedelta(days=i)).isoformat()
         for slot in (0, 1):
             _db.generate_weather(d, slot)
-    
+
     if is_debug():
         _debug(f"引擎初始化完成，数据库路径: {_db.db_path}")
         _debug(f"鱼种数: {len(_db.get_all_fish())}, 鱼饵数: {len(_db.get_all_lures())}")
 
-
-# 在模块加载时记录日志（不是 AstrBot 环境时使用）
-import logging
-try:
-    logger = logging.getLogger("astrbot")
-except Exception:
-    logger = logging.getLogger(__name__)
 
 _config = _load_config()
 _init_db()
@@ -102,6 +110,7 @@ def _debug(msg):
 
 
 # ==================== 账号系统 ====================
+
 
 def register_user(user_id, group_id):
     if not user_id:
@@ -136,7 +145,7 @@ def sign_in(user_id, group_id):
         # 鱼饵奖励总价值约为金币奖励的2倍
         # 金币范围 avg ≈ 1500，2x ≈ 3000
         # 从可购买的鱼饵中随机选一个，按数量凑到目标价值附近
-        shop_lures = [l for l in _db.get_shop_lures() if l["price"] > 0]
+        shop_lures = [lure for lure in _db.get_shop_lures() if lure["price"] > 0]
         if not shop_lures:
             # 极端情况：没有可购鱼饵，则给金币
             gold = random.randint(gold_min, gold_max)
@@ -166,6 +175,7 @@ def check_gold(user_id, group_id):
 
 # ==================== 天气系统 ====================
 
+
 def view_weather():
     weather_data = _db.get_weather()
     lines = ["🌤️ 天气预报（每12小时变更，下午6点切换）"]
@@ -186,14 +196,18 @@ def set_weather_command(operator_id, group_id, weather_type):
     if weather_type not in valid_weather:
         return f"❌ 无效的天气类型！可选：{'/'.join(valid_weather)}"
     from datetime import date as dt
+
     today = dt.today().isoformat()
     slot = _db._current_slot()
     _db.set_weather(today, slot, weather_type)
     label = "白天" if slot == 0 else "晚上"
-    return f"✅ 管理员 {operator_id} 已将当前天气修改为：{weather_type}（{today} {label}）"
+    return (
+        f"✅ 管理员 {operator_id} 已将当前天气修改为：{weather_type}（{today} {label}）"
+    )
 
 
 # ==================== 钓鱼核心 ====================
+
 
 def set_bait(user_id, group_id, bait_name):
     if not user_id:
@@ -226,6 +240,8 @@ def _get_lure_sellable(bait_name):
 
 def _check_fishing_cd(user_id, group_id, count):
     """检查钓鱼CD，返回 (can_fish, message)
+    CD 基于上次钓鱼的实际次数计算，而非本次请求次数。
+    例如：上次钓鱼10次（30分钟CD），则本次钓鱼必须等30分钟后。
     can_fish: True=可以钓鱼, False=CD中
     message: 提示信息
     """
@@ -235,13 +251,18 @@ def _check_fishing_cd(user_id, group_id, count):
     last_time_str = _db.get_last_fishing_time(user_id, group_id)
     if not last_time_str:
         return True, ""
-    from datetime import datetime, timedelta
+    # 获取上次钓鱼的次数，用于计算正确的CD时长
+    last_count = _db.get_last_fishing_count(user_id, group_id)
+    if last_count is None:
+        last_count = 1
+    from datetime import datetime
+
     try:
         last_time = datetime.strptime(last_time_str, "%Y-%m-%d %H:%M:%S")
     except (ValueError, TypeError):
         return True, ""
     cooldown_minutes = cd_config.get("cooldown_minutes", 3)
-    total_cd = cooldown_minutes * count
+    total_cd = cooldown_minutes * last_count
     cd_end = last_time + timedelta(minutes=total_cd)
     now = datetime.now()
     if now < cd_end:
@@ -249,9 +270,15 @@ def _check_fishing_cd(user_id, group_id, count):
         remain_minutes = remain_seconds // 60
         remain_secs = remain_seconds % 60
         if remain_minutes > 0:
-            return False, f"⏳ 钓鱼CD中！还需等待 {remain_minutes}分{remain_secs}秒（单次CD: {cooldown_minutes}分钟 × {count}次）"
+            return (
+                False,
+                f"⏳ 钓鱼CD中！还需等待 {remain_minutes}分{remain_secs}秒（上次钓鱼 {last_count} 次，CD: {cooldown_minutes}分钟 × {last_count} = {total_cd}分钟）",
+            )
         else:
-            return False, f"⏳ 钓鱼CD中！还需等待 {remain_secs}秒（单次CD: {cooldown_minutes}分钟 × {count}次）"
+            return (
+                False,
+                f"⏳ 钓鱼CD中！还需等待 {remain_secs}秒（上次钓鱼 {last_count} 次）",
+            )
     return True, ""
 
 
@@ -326,36 +353,46 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
 
     for i in range(count):
         if count > 1:
-            _debug(f"--- 第 {i+1}/{count} 次 ---")
-        result = _do_single_fish(user_id, group_id, effective_bait, fishing_ground, i == 0)
+            _debug(f"--- 第 {i + 1}/{count} 次 ---")
+        result = _do_single_fish(
+            user_id, group_id, effective_bait, fishing_ground, i == 0
+        )
         if result is None:
             return "❌ 当前条件下没有可钓的鱼"
         if result.startswith("❌"):
             if count == 1:
                 return result
-            results.append(f"  [{i+1}] {result}")
+            results.append(f"  [{i + 1}] {result}")
             continue
-        results.append(f"  [{i+1}] {result}")
+        results.append(f"  [{i + 1}] {result}")
         # 统计
         parts = result.split("|")
         if len(parts) >= 2:
             try:
                 val_str = parts[1].strip().split()[0]
                 total_value += int(val_str)
-            except:
+            except (ValueError, IndexError):
                 pass
         for word in result.split():
             if "鱼王" in word or "鱼皇" in word or "普通鱼" in word:
                 # extract fish name
-                name = result.split("]：")[1].split("\n")[0] if "]：" in result else "unknown"
+                name = (
+                    result.split("]：")[1].split("\n")[0]
+                    if "]：" in result
+                    else "unknown"
+                )
                 fish_counts[name] = fish_counts.get(name, 0) + 1
 
-    # 钓鱼完成后更新最后钓鱼时间（仅对可出售鱼饵记录CD）
+    # 钓鱼完成后更新最后钓鱼时间和次数（仅对可出售鱼饵记录CD）
     if lure_sellable:
-        _db.update_fishing_time(user_id, group_id)
+        _db.update_fishing_time(user_id, group_id, count)
 
     if count == 1:
-        single_result = results[0][7:] if results and results[0].startswith("  [1] ") else (results[0] if results else "❌")
+        single_result = (
+            results[0][7:]
+            if results and results[0].startswith("  [1] ")
+            else (results[0] if results else "❌")
+        )
         return f"🎣 当前使用鱼饵：{effective_bait}\n{single_result}"
 
     # 汇总
@@ -367,7 +404,9 @@ def go_fishing(user_id, group_id, bait_param=None, fishing_ground=None, count=1)
     if fish_counts:
         unique_fish = {k: v for k, v in fish_counts.items() if k != "unknown"}
         if unique_fish:
-            fish_summary = " | ".join(f"{k}x{v}" for k, v in sorted(unique_fish.items()))
+            fish_summary = " | ".join(
+                f"{k}x{v}" for k, v in sorted(unique_fish.items())
+            )
             lines.append(f"🐟 鱼获：{fish_summary}")
     return "\n".join(lines)
 
@@ -390,7 +429,9 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
             for f in all_fish:
                 if f["fish_type"] != "普通鱼":
                     continue
-                if f["weather"] == "" or weather_type in f.get("weather", "").split("/"):
+                if f["weather"] == "" or weather_type in f.get("weather", "").split(
+                    "/"
+                ):
                     candidate_fish.append(f)
             if not candidate_fish:
                 candidate_fish = [f for f in all_fish if f["fish_type"] == "普通鱼"]
@@ -427,7 +468,9 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
     king_fish = [f for f in candidate_fish if f["fish_type"] == "鱼王"]
     emperor_fish = [f for f in candidate_fish if f["fish_type"] == "鱼皇"]
     if show_debug:
-        _debug(f"普通鱼:{len(normal_fish)} 鱼王:{len(king_fish)} 鱼皇:{len(emperor_fish)}")
+        _debug(
+            f"普通鱼:{len(normal_fish)} 鱼王:{len(king_fish)} 鱼皇:{len(emperor_fish)}"
+        )
 
     # 概率判定
     if effective_bait == "万能鱼饵":
@@ -446,7 +489,9 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
             if bait_fish and bait_fish[0].get("fish_type") == "鱼王":
                 prob_emperor_effective = prob_king
                 if show_debug:
-                    _debug(f"鱼皇饵为鱼王({effective_bait})，鱼皇概率提升至 {prob_emperor_effective}%")
+                    _debug(
+                        f"鱼皇饵为鱼王({effective_bait})，鱼皇概率提升至 {prob_emperor_effective}%"
+                    )
         roll = random.uniform(0, 100)
         if show_debug:
             _debug(f"概率判定 roll={roll:.1f}")
@@ -469,11 +514,13 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
     fail_rate = _config.get("fishing_fail_rate", 0) / 100.0
     if fail_rate > 0 and random.random() < fail_rate:
         if show_debug:
-            _debug(f"脱钩判定: 命中 {fail_rate*100:.0f}% 失败率")
+            _debug(f"脱钩判定: 命中 {fail_rate * 100:.0f}% 失败率")
         return "💨 鱼脱钩了！"
 
     # 尺寸生成
-    size, is_big = _generate_size(chosen_fish["min_size"], chosen_fish["min_big_size"], chosen_fish["max_size"])
+    size, is_big = _generate_size(
+        chosen_fish["min_size"], chosen_fish["min_big_size"], chosen_fish["max_size"]
+    )
     if show_debug:
         _debug(f"尺寸: {size:.1f}cm {'大鱼' if is_big else '普通'}")
 
@@ -482,15 +529,37 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
 
     # 自动锁定：鱼王鱼皇，以及可作为鱼饵的鱼
     is_lure_fish = _db.is_fish_a_lure(chosen_fish["name"])
-    auto_locked = 1 if chosen_fish["fish_type"] in ("鱼王", "鱼皇") or is_lure_fish else 0
+    auto_locked = (
+        1 if chosen_fish["fish_type"] in ("鱼王", "鱼皇") or is_lure_fish else 0
+    )
 
     # 保存
-    _db.add_caught(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, auto_locked)
+    _db.add_caught(
+        user_id,
+        group_id,
+        chosen_fish["name"],
+        chosen_fish["fish_type"],
+        size,
+        is_big,
+        value,
+        auto_locked,
+    )
 
     # 如果该鱼也是鱼饵，自动加入背包
     if is_lure_fish:
         _db.add_lure(user_id, group_id, chosen_fish["name"], 1)
-    _db.add_log(user_id, group_id, chosen_fish["name"], chosen_fish["fish_type"], size, is_big, value, effective_bait, chosen_fish["fishing_ground"], weather_type)
+    _db.add_log(
+        user_id,
+        group_id,
+        chosen_fish["name"],
+        chosen_fish["fish_type"],
+        size,
+        is_big,
+        value,
+        effective_bait,
+        chosen_fish["fishing_ground"],
+        weather_type,
+    )
 
     big_label = "🐠" if is_big else ""
     lock_label = "🔒" if auto_locked else ""
@@ -535,6 +604,7 @@ def get_current_bait(user_id, group_id):
     bait = user.get("default_bait") or "万能鱼饵"
     return f"🎣 {user_id} 当前默认鱼饵：{bait}"
 
+
 def clear_bait(user_id, group_id):
     """清除默认鱼饵，恢复万能鱼饵"""
     if not user_id:
@@ -546,6 +616,7 @@ def clear_bait(user_id, group_id):
         return f"❌ 用户 {user_id} 在本群不存在"
     _db.set_default_bait(user_id, group_id, "万能鱼饵")
     return "✅ 已恢复使用万能鱼饵"
+
 
 def view_fish_pool():
     """查看当前鱼池（当前天气下可钓的鱼），天气限定鱼显示在最前面，然后按鱼皇>鱼王>普通鱼排序"""
@@ -586,6 +657,7 @@ def view_fish_pool():
             bait_str = f.get("bait", "") or "通杀"
             lines.append(f"    {f['name']} - {bait_str}")
     return "\n".join(lines)
+
 
 def get_fish_help():
     return (
@@ -635,6 +707,7 @@ def get_fish_version():
 
 # ==================== 背包与鱼塘 ====================
 
+
 def view_inventory(user_id, group_id):
     if not user_id:
         return "❌ 请提供 user_id"
@@ -678,9 +751,11 @@ def view_fish_pond(user_id, group_id, page=1):
     for f in fish_list:
         lock_icon = "🔒" if f["locked"] else ""
         big_icon = "🐠" if f["is_big"] else "🐟"
-        lines.append(f"  [{f['id']}] {big_icon} {f['fish_name']} ({f['fish_type']}) {f['size']:.1f}cm 价值{int(f['value'])}G {lock_icon} 📅{f['caught_date']}")
+        lines.append(
+            f"  [{f['id']}] {big_icon} {f['fish_name']} ({f['fish_type']}) {f['size']:.1f}cm 价值{int(f['value'])}G {lock_icon} 📅{f['caught_date']}"
+        )
     if page < total_pages:
-        lines.append(f"\n  下一页：/查看鱼塘 {page+1}")
+        lines.append(f"\n  下一页：/查看鱼塘 {page + 1}")
     return "\n".join(lines)
 
 
@@ -762,6 +837,7 @@ def unlock_fish(user_id, group_id, fish_id):
 
 # ==================== 交易与出售 ====================
 
+
 def sell_fish_by_name(user_id, group_id, fish_name):
     if not user_id or not fish_name:
         return "❌ 请提供 fish_name"
@@ -810,6 +886,7 @@ def sell_all_fish(user_id, group_id):
 
 # ==================== 商店 ====================
 
+
 def view_shop():
     lures = _db.get_shop_lures()
     if not lures:
@@ -854,6 +931,7 @@ def buy_item(user_id, group_id, item_id, amount=1):
 
 
 # ==================== 氪金（管理员） ====================
+
 
 def krypton(user_id, group_id, gold):
     if not user_id or gold is None:
@@ -952,13 +1030,16 @@ def my_info(user_id):
 
 # ==================== 图鉴与排行榜 ====================
 
+
 def get_distinct_regions():
     """获取所有不重复的区域列表"""
     return _db.get_distinct_regions()
 
+
 def get_distinct_grounds():
     """获取所有不重复的钓场列表"""
     return _db.get_distinct_grounds()
+
 
 def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
     """鱼群图鉴 - 分页显示，每页10条
@@ -977,7 +1058,9 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
     if page < 1:
         page = 1
 
-    handbook = _db.get_handbook(user_id, group_id, region=region, fishing_ground=fishing_ground)
+    handbook = _db.get_handbook(
+        user_id, group_id, region=region, fishing_ground=fishing_ground
+    )
     if not handbook:
         return "📖 图鉴数据为空"
 
@@ -987,7 +1070,7 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
     if page > total_pages:
         page = total_pages
     start = (page - 1) * page_size
-    page_data = handbook[start:start + page_size]
+    page_data = handbook[start : start + page_size]
 
     # 构建图鉴标题
     title_parts = [f"📖 {user_id} 的鱼群图鉴"]
@@ -1003,7 +1086,9 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
     current_ground = None
     for fish in page_data:
         mark = "✅" if fish["obtained"] else "❌"
-        bait_str = f"({fish.get('bait','') or '通杀'})" if fish.get('bait') else "(通杀)"
+        bait_str = (
+            f"({fish.get('bait', '') or '通杀'})" if fish.get("bait") else "(通杀)"
+        )
         rank_str = ""
         if fish["obtained"]:
             rank = _db.get_handbook_user_ranking(group_id, fish["name"], user_id)
@@ -1024,10 +1109,12 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
         fish_weather = fish.get("weather", "")
         if fish_weather:
             weather_str = f" 🌤️{fish_weather}"
-        lines.append(f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{rank_str}{weather_str}")
+        lines.append(
+            f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{rank_str}{weather_str}"
+        )
 
     if page < total_pages:
-        next_cmd = f"/鱼群图鉴 {page+1}"
+        next_cmd = f"/鱼群图鉴 {page + 1}"
         if region:
             next_cmd += f" {region}"
         if fishing_ground:
@@ -1055,7 +1142,9 @@ def fishing_log(user_id, group_id, page=1):
     lines = [f"📋 {user_id} 的钓鱼记录（第 {page}/{total_pages} 页，共 {total} 条）"]
     for r in records:
         big_icon = "🐠" if r["is_big"] else "🐟"
-        lines.append(f"  {big_icon} {r['fish_name']} ({r['fish_type']}) {r['size']:.1f}cm 价值{int(r['value'])}G | {r['catch_time']}")
+        lines.append(
+            f"  {big_icon} {r['fish_name']} ({r['fish_type']}) {r['size']:.1f}cm 价值{int(r['value'])}G | {r['catch_time']}"
+        )
     if page < total_pages:
         lines.append(f"  查看更多：/钓鱼记录 {page + 1}")
     return "\n".join(lines)
@@ -1074,9 +1163,11 @@ def leaderboard(group_id, fish_name, size_order=None):
     rankings = _db.get_leaderboard(group_id, fish_name, order)
     if not rankings:
         return f"📊 {fish_name} 暂无钓鱼记录"
-    lines = [f"📊 {fish_name} 排行榜（从{order_label}到{'小' if order_label=='大' else '大'}，前10）"]
+    lines = [
+        f"📊 {fish_name} 排行榜（从{order_label}到{'小' if order_label == '大' else '大'}，前10）"
+    ]
     medals = ["🥇", "🥈", "🥉"]
     for i, r in enumerate(rankings):
-        medal = medals[i] if i < 3 else f"{i+1}."
+        medal = medals[i] if i < 3 else f"{i + 1}."
         lines.append(f"  {medal} {r['user_id']} - {r['size']:.1f}cm")
     return "\n".join(lines)
