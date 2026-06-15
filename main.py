@@ -191,8 +191,10 @@ class FishingPlugin(Star):
 
     @filter.command("当前鱼池")
     async def cmd_fish_pool(self, event: AstrMessageEvent):
-        """查看当前天气下可钓的鱼"""
-        yield event.plain_result(view_fish_pool())
+        """查看当前天气下可钓的鱼：/当前鱼池 [鱼饵]"""
+        args = parse_args(event.message_str)
+        bait_name = args[1] if len(args) >= 2 else None
+        yield event.plain_result(view_fish_pool(bait_name=bait_name))
 
     @filter.command("锁定")
     async def cmd_lock(self, event: AstrMessageEvent):
@@ -384,12 +386,32 @@ class FishingPlugin(Star):
 
     @filter.command("排行榜")
     async def cmd_leaderboard(self, event: AstrMessageEvent):
-        """查看排行榜：/排行榜 [鱼名] [大/小]"""
+        """查看排行榜：/排行榜 [鱼名] [大/小] [鱼的种类] [页码]
+        用法：
+          /排行榜                  → 全部鱼类第1页
+          /排行榜 2                → 全部鱼类第2页
+          /排行榜 冥河灯            → 冥河灯尺寸排行榜
+          /排行榜 冥河灯 小         → 冥河灯最小尺寸排行榜
+          /排行榜 鱼王              → 所有鱼王的排行榜
+          /排行榜 鱼王 小 2         → 所有鱼王最小尺寸排行榜第2页
+          /排行榜 冥河灯 大 鱼皇    → 冥河灯(鱼皇)尺寸排行榜
+        """
         group_id = event.get_group_id()
         args = parse_args(event.message_str)
-        fish_name = args[1] if len(args) >= 2 else None
-        size_order = args[2] if len(args) >= 3 else None
-        result = leaderboard(group_id, fish_name, size_order)
+        fish_name = None
+        size_order = None
+        fish_type = None
+        page = 1
+        for arg in args[1:]:
+            if arg in ("大", "小"):
+                size_order = arg
+            elif arg in ("鱼王", "鱼皇", "普通鱼"):
+                fish_type = arg
+            elif arg.isdigit():
+                page = int(arg)
+            else:
+                fish_name = arg
+        result = leaderboard(group_id, fish_name=fish_name, size_order=size_order, fish_type=fish_type, page=page)
         yield event.plain_result(result)
 
     # ==================== 管理 ====================

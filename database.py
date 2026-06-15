@@ -636,17 +636,40 @@ class Database:
         return {r["fish_name"] for r in rows}
 
     # ---- leaderboard ----
-    def get_leaderboard(self, group_id, fish_name, order="DESC"):
-        config = load_config()
-        limit = config.get("leaderboard_size", 10)
+    def get_leaderboard(self, group_id, fish_name=None, order="DESC", fish_type=None, page=1, page_size=10):
+        """排行榜查询
+        - fish_name: 按鱼名查（返回所有记录，上游分页，每页最多10条）
+        - fish_type: 按种类查（返回所有记录，由上层分组并限制每种鱼最多3条）
+        - 都为空: 返回所有种类
+        返回: (records_list, total_count)
+        """
         self.connect()
         order_clause = "DESC" if order == "DESC" else "ASC"
-        rows = self.conn.execute(
-            f"SELECT user_id,fish_name,size,catch_time FROM fishing_log WHERE group_id=? AND fish_name=? ORDER BY size {order_clause} LIMIT ?",
-            (group_id, fish_name, limit),
-        ).fetchall()
+        if fish_name:
+            # 按鱼名查：返回所有记录（每条钓鱼记录独立排行）
+            query = f"SELECT user_id,fish_name,size,catch_time FROM fishing_log WHERE group_id=? AND fish_name=? ORDER BY size {order_clause}"
+            rows = self.conn.execute(query, (group_id, fish_name)).fetchall()
+            total = self.conn.execute(
+                "SELECT COUNT(*) FROM fishing_log WHERE group_id=? AND fish_name=?",
+                (group_id, fish_name),
+            ).fetchone()[0]
+        elif fish_type:
+            # 按种类查：返回所有记录，不分组
+            query = f"SELECT user_id,fish_name,fish_type,size,catch_time FROM fishing_log WHERE group_id=? AND fish_type=? ORDER BY fish_name,size {order_clause}"
+            rows = self.conn.execute(query, (group_id, fish_type)).fetchall()
+            total = self.conn.execute(
+                "SELECT COUNT(*) FROM fishing_log WHERE group_id=? AND fish_type=?",
+                (group_id, fish_type),
+            ).fetchone()[0]
+        else:
+            # 全部
+            query = f"SELECT user_id,fish_name,fish_type,size,catch_time FROM fishing_log WHERE group_id=? ORDER BY CASE fish_type WHEN '鱼皇' THEN 0 WHEN '鱼王' THEN 1 ELSE 2 END, fish_name, size {order_clause}"
+            rows = self.conn.execute(query, (group_id,)).fetchall()
+            total = self.conn.execute(
+                "SELECT COUNT(*) FROM fishing_log WHERE group_id=?", (group_id,)
+            ).fetchone()[0]
         self.close()
-        return [dict(r) for r in rows]
+        return [dict(r) for r in rows], total
 
     def get_extreme(self, group_id, fish_name):
         self.connect()

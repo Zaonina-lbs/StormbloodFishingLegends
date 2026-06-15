@@ -618,14 +618,30 @@ def clear_bait(user_id, group_id):
     return "✅ 已恢复使用万能鱼饵"
 
 
-def view_fish_pool():
-    """查看当前鱼池（当前天气下可钓的鱼），天气限定鱼显示在最前面，然后按鱼皇>鱼王>普通鱼排序"""
+def view_fish_pool(bait_name=None):
+    """查看当前鱼池（当前天气下可钓的鱼），天气限定鱼显示在最前面，然后按鱼皇>鱼王>普通鱼排序
+    Args:
+        bait_name: 可选鱼饵名称，用于筛选该鱼饵在当前天气能钓到的鱼
+    """
     weather = _db.get_today_weather()
     weather_type = weather["weather"]
     all_fish = _db.get_all_fish()
     pool = []
     for f in all_fish:
         if f["weather"] == "" or weather_type in f.get("weather", "").split("/"):
+            # 如果指定了鱼饵，进一步按鱼饵筛选
+            if bait_name:
+                fish_bait = f.get("bait", "")
+                if fish_bait == "" or fish_bait == bait_name:
+                    pass  # 命中：无限制或精确匹配
+                elif "/" in fish_bait:
+                    bait_parts = fish_bait.split("/")
+                    if bait_name in bait_parts:
+                        pass  # 命中：多鱼饵匹配
+                    else:
+                        continue  # 不匹配
+                else:
+                    continue  # 不匹配
             pool.append(f)
     if not pool:
         return "🐟 当前鱼池为空"
@@ -675,7 +691,7 @@ def get_fish_help():
         "  /查看当前鱼饵\n"
         "  /不使用鱼饵\n"
         "  /查看天气\n"
-        "  /当前鱼池\n"
+        "  /当前鱼池 [鱼饵]\n"
         "\n【背包】\n"
         "  /查看背包\n"
         "  /查看鱼塘 [页码]\n"
@@ -693,7 +709,7 @@ def get_fish_help():
         "\n【图鉴】\n"
         "  /鱼群图鉴 [地区|钓场|页码] [页码]\n"
         "  /钓鱼记录 [页]\n"
-        "  /排行榜 [鱼名] [大/小]\n"
+        "  /排行榜 [鱼名] [大/小] [鱼的种类] [页码]\n"
         "\n【管理员】\n"
         "  /修改天气 [天气类型]\n"
         "  /补偿鱼饵 [目标user_id] [鱼饵] [数量]\n"
@@ -718,8 +734,8 @@ def view_inventory(user_id, group_id):
         return f"❌ 用户 {user_id} 在本群不存在"
     inventory = _db.get_inventory(user_id, group_id)
     if not inventory:
-        return "🎒 背包为空"
-    lines = [f"🎒 {user_id} 的背包"]
+        return f"💰 金币：{user['gold']} G\n🎒 背包为空"
+    lines = [f"🎒 {user_id} 的背包", f"  💰 金币：{user['gold']} G"]
     for item in inventory:
         lines.append(f"  📦 {item['lure_name']} x{item['quantity']}")
     return "\n".join(lines)
@@ -1150,24 +1166,94 @@ def fishing_log(user_id, group_id, page=1):
     return "\n".join(lines)
 
 
-def leaderboard(group_id, fish_name, size_order=None):
-    if not fish_name:
-        return "❌ 请提供鱼名"
+def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=1):
     if not group_id:
         return "❌ 请提供 group_id（群号）"
+    try:
+        page = int(page) if page else 1
+    except (ValueError, TypeError):
+        page = 1
+    if page < 1:
+        page = 1
+    page_size = 10
     order = "DESC"
     order_label = "大"
     if size_order == "小":
         order = "ASC"
         order_label = "小"
-    rankings = _db.get_leaderboard(group_id, fish_name, order)
-    if not rankings:
-        return f"📊 {fish_name} 暂无钓鱼记录"
-    lines = [
-        f"📊 {fish_name} 排行榜（从{order_label}到{'小' if order_label == '大' else '大'}，前10）"
-    ]
-    medals = ["🥇", "🥈", "🥉"]
-    for i, r in enumerate(rankings):
-        medal = medals[i] if i < 3 else f"{i + 1}."
-        lines.append(f"  {medal} {r['user_id']} - {r['size']:.1f}cm")
+
+    if fish_name:
+        # 按鱼名查：每用户取最大/最小尺寸，分页
+        rankings, total = _db.get_leaderboard(group_id, fish_name=fish_name, order=order, fish_type=None, page=page, page_size=page_size)
+        if not rankings:
+            return f"📊 {fish_name} 暂无钓鱼记录"
+        total_pages = (total + page_size - 1) // page_size
+        title = f"📊 {fish_name}"
+        if fish_type:
+            title += f" ({fish_type})"
+        title += f" 排行榜（从{order_label}到{'小' if order_label == '大' else '大'}，第{page}/{total_pages}页）"
+        lines = [title]
+        medals = ["🥇", "🥈", "🥉"]
+        # 只取当前页
+        offset = (page - 1) * page_size
+        page_rankings = rankings[offset:offset + page_size]
+        for i, r in enumerate(page_rankings):
+            global_i = offset + i
+            medal = medals[global_i] if global_i < 3 else f"{global_i + 1}."
+            lines.append(f"  {medal} {r['user_id']} - {r['size']:.1f}cm")
+    else:
+        # 按种类或全部：获取全部记录，在内存中分组并限制每种鱼3条
+        all_records, _ = _db.get_leaderboard(group_id, fish_name=None, order=order, fish_type=fish_type, page=1, page_size=100000)
+        if not all_records:
+            if fish_type:
+                return f"📊 {fish_type} 暂无钓鱼记录"
+            else:
+                return "📊 暂无钓鱼记录"
+
+        # 按鱼名分组，按种类/全部查询时每组最多3条
+        grouped = []
+        current_fish = None
+        fish_count = 0
+        for r in all_records:
+            if r["fish_name"] != current_fish:
+                current_fish = r["fish_name"]
+                fish_count = 0
+            if fish_count < 3:
+                grouped.append(r)
+                fish_count += 1
+
+        total = len(grouped)
+        total_pages = (total + page_size - 1) // page_size
+        if page > total_pages:
+            page = total_pages
+        offset = (page - 1) * page_size
+        page_items = grouped[offset:offset + page_size]
+
+        if fish_type:
+            title = f"📊 {fish_type}"
+        else:
+            title = "📊 全部鱼类"
+        title += f" 排行榜（从{order_label}到{'小' if order_label == '大' else '大'}，第{page}/{total_pages}页）"
+        lines = [title]
+        current_fish = None
+        fish_rank = 0
+        for r in page_items:
+            if r["fish_name"] != current_fish:
+                current_fish = r["fish_name"]
+                fish_rank = 0
+                lines.append(f"  [{r.get('fish_type', '')}] {r['fish_name']}")
+            fish_rank += 1
+            medal = ["🥇", "🥈", "🥉"][fish_rank - 1] if fish_rank <= 3 else f"{fish_rank}."
+            lines.append(f"    {medal} {r['user_id']} - {r['size']:.1f}cm")
+
+    if page < total_pages:
+        next_cmd = "/排行榜"
+        if fish_name:
+            next_cmd += f" {fish_name}"
+        if size_order:
+            next_cmd += f" {size_order}"
+        if fish_type:
+            next_cmd += f" {fish_type}"
+        next_cmd += f" {page + 1}"
+        lines.append(f"\n  下一页：{next_cmd}")
     return "\n".join(lines)
