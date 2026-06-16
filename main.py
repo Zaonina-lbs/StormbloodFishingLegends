@@ -411,7 +411,13 @@ class FishingPlugin(Star):
                 page = int(arg)
             else:
                 fish_name = arg
-        result = leaderboard(group_id, fish_name=fish_name, size_order=size_order, fish_type=fish_type, page=page)
+        result = leaderboard(
+            group_id,
+            fish_name=fish_name,
+            size_order=size_order,
+            fish_type=fish_type,
+            page=page,
+        )
         yield event.plain_result(result)
 
     # ==================== 管理 ====================

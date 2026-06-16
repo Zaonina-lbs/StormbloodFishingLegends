@@ -636,7 +636,15 @@ class Database:
         return {r["fish_name"] for r in rows}
 
     # ---- leaderboard ----
-    def get_leaderboard(self, group_id, fish_name=None, order="DESC", fish_type=None, page=1, page_size=10):
+    def get_leaderboard(
+        self,
+        group_id,
+        fish_name=None,
+        order="DESC",
+        fish_type=None,
+        page=1,
+        page_size=10,
+    ):
         """排行榜查询
         - fish_name: 按鱼名查（返回所有记录，上游分页，每页最多10条）
         - fish_type: 按种类查（返回所有记录，由上层分组并限制每种鱼最多3条）

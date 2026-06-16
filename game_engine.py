@@ -1184,7 +1184,14 @@ def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=
 
     if fish_name:
         # 按鱼名查：每用户取最大/最小尺寸，分页
-        rankings, total = _db.get_leaderboard(group_id, fish_name=fish_name, order=order, fish_type=None, page=page, page_size=page_size)
+        rankings, total = _db.get_leaderboard(
+            group_id,
+            fish_name=fish_name,
+            order=order,
+            fish_type=None,
+            page=page,
+            page_size=page_size,
+        )
         if not rankings:
             return f"📊 {fish_name} 暂无钓鱼记录"
         total_pages = (total + page_size - 1) // page_size
@@ -1196,14 +1203,21 @@ def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=
         medals = ["🥇", "🥈", "🥉"]
         # 只取当前页
         offset = (page - 1) * page_size
-        page_rankings = rankings[offset:offset + page_size]
+        page_rankings = rankings[offset : offset + page_size]
         for i, r in enumerate(page_rankings):
             global_i = offset + i
             medal = medals[global_i] if global_i < 3 else f"{global_i + 1}."
             lines.append(f"  {medal} {r['user_id']} - {r['size']:.1f}cm")
     else:
         # 按种类或全部：获取全部记录，在内存中分组并限制每种鱼3条
-        all_records, _ = _db.get_leaderboard(group_id, fish_name=None, order=order, fish_type=fish_type, page=1, page_size=100000)
+        all_records, _ = _db.get_leaderboard(
+            group_id,
+            fish_name=None,
+            order=order,
+            fish_type=fish_type,
+            page=1,
+            page_size=100000,
+        )
         if not all_records:
             if fish_type:
                 return f"📊 {fish_type} 暂无钓鱼记录"
@@ -1227,7 +1241,7 @@ def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=
         if page > total_pages:
             page = total_pages
         offset = (page - 1) * page_size
-        page_items = grouped[offset:offset + page_size]
+        page_items = grouped[offset : offset + page_size]
 
         if fish_type:
             title = f"📊 {fish_type}"
@@ -1243,7 +1257,9 @@ def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=
                 fish_rank = 0
                 lines.append(f"  [{r.get('fish_type', '')}] {r['fish_name']}")
             fish_rank += 1
-            medal = ["🥇", "🥈", "🥉"][fish_rank - 1] if fish_rank <= 3 else f"{fish_rank}."
+            medal = (
+                ["🥇", "🥈", "🥉"][fish_rank - 1] if fish_rank <= 3 else f"{fish_rank}."
+            )
             lines.append(f"    {medal} {r['user_id']} - {r['size']:.1f}cm")
 
     if page < total_pages:
