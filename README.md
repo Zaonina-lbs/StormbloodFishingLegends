@@ -27,14 +27,54 @@ StormbloodFishingLegends/
 ├── game_engine.py       # 游戏引擎核心（纯函数）
 ├── database.py          # 数据库操作层（SQLite）
 ├── data_loader.py       # 数据加载（Excel→YAML）
-├── hot_reload.py        # 热更新模块
+├── hot_reload.py        # 热更新模块（CLI工具，非必须）
+├── _conf_schema.json    # AstrBot WebUI 配置Schema
 ├── config.yaml          # 游戏配置文件
 ├── fish_data.yaml       # 鱼类数据
 ├── lure_data.yaml       # 鱼饵数据
 ├── requirements.txt     # 依赖列表
 ├── metadata.yaml        # AstrBot 插件元信息
+├── logo.png             # 插件图标
+├── pages/               # AstrBot WebUI 管理页面
+│   └── admin/
+│       └── index.html   # 数据管理面板
 └── README.md            # 本文件
 ```
+
+## WebUI 管理面板
+
+插件提供了 AstrBot WebUI 管理页面，可在插件详情页打开「admin」页面进行管理：
+
+- 🐟 **鱼类管理** — 新增/编辑/删除鱼类数据，支持所有字段（名称、种类、地区、钓场、鱼饵、天气、尺寸、价值）
+- 🎣 **鱼饵管理** — 管理鱼饵名称、售价、可出售状态
+- 🌤️ **天气管理** — 编辑天气类型列表、查看天气预报、手动设置天气
+- 🏪 **商店配置** — 查看所有可出售商品
+
+所有修改实时生效，无需重启插件或使用热更新指令。
+
+### WebUI 参数配置
+
+在插件设置页可直接调整游戏参数：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `debug` | `false` | 调试模式开关 |
+| `initial_gold` | `2000` | 初始金币 |
+| `sign_gold_min` | `2000` | 签到金币下限 |
+| `sign_gold_max` | `4000` | 签到金币上限 |
+| `bait_prob_target` | `25` | 目标鱼概率（%） |
+| `bait_prob_king` | `2` | 鱼王概率（%） |
+| `bait_prob_emperor` | `0.2` | 鱼皇概率（%） |
+| `size_prob_normal` | `75` | 普通尺寸概率（%） |
+| `value_float_percent` | `20` | 价值浮动范围（%） |
+| `krypton_max` | `1000` | 单次氪金上限 |
+| `fishing_cd.enabled` | `true` | 钓鱼冷却开关 |
+| `fishing_cd.cooldown_minutes` | `3` | 单次钓鱼冷却时间（分钟） |
+| `page_size` | `10` | 分页大小 |
+| `leaderboard_size` | `10` | 排行榜显示条数 |
+| `fishing_fail_rate` | `20` | 钓鱼脱钩概率（%） |
+| `default_bait_price` | `100` | 万能鱼饵单次消耗金币 |
+| `value_multiplier` | `0.9` | 价值倍率 |
 
 ## 指令列表
 
@@ -62,7 +102,7 @@ StormbloodFishingLegends/
 | 指令 | 说明 |
 |------|------|
 | `/查看背包` | 查看鱼饵库存 |
-| `/查看鱼塘` | 查看钓获的鱼（按日期倒序） |
+| `/查看鱼塘 [页码]` | 查看钓获的鱼（按日期倒序） |
 | `/锁定 [id]` | 锁定鱼，防止误售 |
 | `/解锁 [id]` | 解锁鱼 |
 
@@ -87,8 +127,9 @@ StormbloodFishingLegends/
 ### 管理员指令
 | 指令 | 说明 |
 |------|------|
-| `/热更新` | 热更新鱼数据和鱼饵数据（管理员） |
 | `/补偿 [目标user_id] [金币]` | 向目标用户补偿金币（管理员） |
+| `/补偿鱼饵 [目标user_id] [鱼饵] [数量]` | 向目标用户补偿鱼饵（管理员） |
+| `/修改天气 [天气类型]` | 修改当前天气（管理员） |
 
 ## 游戏机制
 
@@ -116,30 +157,6 @@ StormbloodFishingLegends/
 ### 数据按群隔离
 - 所有玩家数据按群聊分组
 - 不同群的账号、金币、背包完全独立
-
-## 配置说明
-
-编辑 `config.yaml` 可调整以下参数：
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `debug` | `true` | 调试模式开关 |
-| `initial_gold` | `2000` | 初始金币 |
-| `sign_gold_min` / `sign_gold_max` | `1000` / `2000` | 签到金币范围 |
-| `bait_prob_target` | `25` | 目标鱼概率（%） |
-| `bait_prob_king` | `2` | 鱼王概率（%） |
-| `bait_prob_emperor` | `0.2` | 鱼皇概率（%） |
-| `size_prob_normal` | `75` | 普通尺寸概率（%） |
-| `value_float_percent` | `20` | 价值浮动范围（%） |
-| `krypton_max` | `1000` | 单次氪金上限 |
-| `fishing_cd.enabled` | `true` | 钓鱼冷却开关 |
-| `fishing_cd.cooldown_minutes` | `3` | 单次钓鱼冷却时间（分钟） |
-| `page_size` | `10` | 分页大小 |
-| `leaderboard_size` | `10` | 排行榜显示条数 |
-
-## 热更新
-
-管理员发送 `/热更新` 命令，插件会自动读取 `fish_data.yaml` 和 `lure_data.yaml`，对比当前数据库中的数据并执行更新。
 
 ## 许可证
 

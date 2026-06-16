@@ -1,0 +1,127 @@
+{
+  "debug": {
+    "description": "调试模式",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后将输出详细的调试信息到控制台"
+  },
+  "initial_gold": {
+    "description": "初始金币",
+    "type": "int",
+    "default": 2000,
+    "hint": "新用户注册时的初始金币数量"
+  },
+  "sign_gold_min": {
+    "description": "签到金币下限",
+    "type": "int",
+    "default": 2000,
+    "hint": "每日签到可获得金币的最小值"
+  },
+  "sign_gold_max": {
+    "description": "签到金币上限",
+    "type": "int",
+    "default": 4000,
+    "hint": "每日签到可获得金币的最大值"
+  },
+  "bait_prob_target": {
+    "description": "目标鱼概率(%)",
+    "type": "int",
+    "default": 25,
+    "hint": "使用目标鱼饵时钓到目标鱼的概率（百分比）"
+  },
+  "bait_prob_king": {
+    "description": "鱼王概率(%)",
+    "type": "float",
+    "default": 2.0,
+    "hint": "钓到鱼王的概率（百分比）"
+  },
+  "bait_prob_emperor": {
+    "description": "鱼皇概率(%)",
+    "type": "float",
+    "default": 0.2,
+    "hint": "钓到鱼皇的概率（百分比）"
+  },
+  "size_prob_normal": {
+    "description": "普通尺寸概率(%)",
+    "type": "int",
+    "default": 75,
+    "hint": "钓到的鱼为普通尺寸的概率"
+  },
+  "size_prob_big": {
+    "description": "大尺寸概率(%)",
+    "type": "int",
+    "default": 25,
+    "hint": "钓到的鱼为大尺寸的概率"
+  },
+  "value_float_percent": {
+    "description": "价值浮动范围(%)",
+    "type": "int",
+    "default": 20,
+    "hint": "鱼的实际售价在基础价值±此百分比范围内浮动"
+  },
+  "krypton_max": {
+    "description": "单次氪金上限",
+    "type": "int",
+    "default": 1000,
+    "hint": "用户每次氪金最多可增加的金币数"
+  },
+  "page_size": {
+    "description": "分页大小",
+    "type": "int",
+    "default": 10,
+    "hint": "查看鱼塘、图鉴等列表时每页显示的数量"
+  },
+  "leaderboard_size": {
+    "description": "排行榜显示条数",
+    "type": "int",
+    "default": 10
+  },
+  "version_string": {
+    "description": "版本字符串",
+    "type": "string",
+    "default": "FF14 4.0-4.X",
+    "hint": "鱼池版本标识，可通过 /鱼池版本 查看"
+  },
+  "value_multiplier": {
+    "description": "价值倍率",
+    "type": "float",
+    "default": 0.9,
+    "hint": "鱼实际产出 = base_value × 此倍率，用于平衡游戏经济"
+  },
+  "fishing_fail_rate": {
+    "description": "钓鱼失败率(%)",
+    "type": "int",
+    "default": 20,
+    "hint": "钓鱼时鱼脱钩的概率（百分比）"
+  },
+  "default_bait_price": {
+    "description": "万能鱼饵单次消耗金币",
+    "type": "int",
+    "default": 100,
+    "hint": "使用万能鱼饵时每次钓鱼消耗的金币"
+  },
+  "fishing_cd": {
+    "description": "钓鱼冷却设置",
+    "type": "object",
+    "hint": "控制钓鱼的冷却时间，多次钓鱼时 CD = cooldown_minutes × 次数",
+    "items": {
+      "enabled": {
+        "description": "是否启用钓鱼CD",
+        "type": "bool",
+        "default": true
+      },
+      "cooldown_minutes": {
+        "description": "单次钓鱼CD时间(分钟)",
+        "type": "int",
+        "default": 3,
+        "hint": "单次钓鱼的基础冷却时间"
+      }
+    }
+  },
+  "weather_types": {
+    "description": "天气类型列表",
+    "type": "list",
+    "default": ["晴朗", "碧空", "阴云", "薄雾", "微风", "强风", "小雨", "暴雨", "打雷", "雷雨", "扬沙"],
+    "hint": "游戏中的天气类型列表，用英文逗号分隔"
+  }
+}

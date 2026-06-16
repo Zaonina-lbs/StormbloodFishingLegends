@@ -40,16 +40,25 @@ def _init_db():
         _db = get_db(data_dir=_data_dir)
 
 
-def init_engine(data_dir=None):
+def init_engine(data_dir=None, config=None):
     """初始化游戏引擎，设置数据目录并创建/导入数据。
     在 AstrBot 插件中调用此函数设置数据库路径。
 
     Args:
         data_dir: AstrBot 插件数据目录，数据库文件将存放在此目录下
+        config: AstrBotConfig 对象（可选），从 AstrBot WebUI 配置传入。
+                如果提供，将优先使用其值，未配置的项回退到 config.yaml 默认值
     """
     global _data_dir, _db, _config
     _data_dir = data_dir
+
+    # 加载 config.yaml 作为基础配置（包含 lures、fishes 等数据列表）
     _config = _load_config()
+
+    # 如果传入了 AstrBot 配置，将其值合并到 _config 中
+    # AstrBotConfig 继承自 dict，直接用 dict 方式访问
+    if config is not None:
+        _merge_astrbot_config(config)
     from .database import init_db_with_path
 
     if data_dir:
@@ -76,11 +85,17 @@ def init_engine(data_dir=None):
         _db.import_fish_data(fish_data)
         logger.info(f"已同步 {len(fish_data)} 条鱼基础数据到数据库")
 
-    # 始终同步鱼饵数据（使用 upsert，不删除已有记录，保证用户背包数据不丢失）
+    # 导入鱼饵数据（仅在空表时初始化，保护用户修改）
     lures = _config.get("lures", [])
     if lures:
-        _db.reload_lure_data(lures)
-        logger.info(f"已校准 {len(lures)} 条鱼饵数据到数据库")
+        _db.import_lure_data(lures)
+        logger.info(f"已导入 {len(lures)} 条鱼饵数据到数据库")
+
+    # 加载持久化的天气类型配置（优先于 config.yaml）
+    persisted_weather = _db.get_config("weather_types")
+    if persisted_weather:
+        _config["weather_types"] = persisted_weather
+        logger.info(f"已加载持久化天气类型: {len(persisted_weather)} 种")
 
     # 生成天气数据
     from datetime import date as dt
@@ -96,8 +111,37 @@ def init_engine(data_dir=None):
         _debug(f"鱼种数: {len(_db.get_all_fish())}, 鱼饵数: {len(_db.get_all_lures())}")
 
 
-_config = _load_config()
-_init_db()
+def _merge_astrbot_config(astrbot_config):
+    """将 AstrBot 传入的配置合并到全局 _config 中。
+    AstrBotConfig 中的值优先，覆盖 config.yaml 中的对应项。
+    lures 和 fishes 数据列表由 YAML 文件管理，不在此处合并。
+    """
+    global _config
+    # 可覆盖的游戏参数键列表
+    game_param_keys = [
+        "debug",
+        "initial_gold",
+        "sign_gold_min",
+        "sign_gold_max",
+        "bait_prob_target",
+        "bait_prob_king",
+        "bait_prob_emperor",
+        "size_prob_normal",
+        "size_prob_big",
+        "value_float_percent",
+        "krypton_max",
+        "page_size",
+        "leaderboard_size",
+        "version_string",
+        "value_multiplier",
+        "fishing_fail_rate",
+        "default_bait_price",
+        "fishing_cd",
+        "weather_types",
+    ]
+    for key in game_param_keys:
+        if key in astrbot_config:
+            _config[key] = astrbot_config[key]
 
 
 def is_debug():
@@ -713,7 +757,11 @@ def get_fish_help():
         "\n【管理员】\n"
         "  /修改天气 [天气类型]\n"
         "  /补偿鱼饵 [目标user_id] [鱼饵] [数量]\n"
-        "  /补偿 [目标user_id] [金币]"
+        "  /补偿 [目标user_id] [金币]\n"
+        "\n【WebUI管理面板】\n"
+        "  在 AstrBot WebUI 插件详情页打开「admin」页面\n"
+        "  可直接管理鱼类数据、鱼饵数据、天气信息和商店配置\n"
+        "  所有修改实时生效，无需重启或热更新"
     )
 
 
@@ -1273,3 +1321,116 @@ def leaderboard(group_id, fish_name=None, size_order=None, fish_type=None, page=
         next_cmd += f" {page + 1}"
         lines.append(f"\n  下一页：{next_cmd}")
     return "\n".join(lines)
+
+
+# ==================== 管理API（供Plugin Pages使用） ====================
+
+
+def admin_get_all_fish():
+    """获取所有鱼类数据"""
+    if _db is None:
+        return []
+    return _db.get_all_fish()
+
+
+def admin_add_or_update_fish(data):
+    """新增或更新鱼类数据"""
+    if _db is None:
+        return False
+    fish_list = _db.get_all_fish()
+    # 查找是否存在同名鱼
+    existing_idx = None
+    for i, f in enumerate(fish_list):
+        if f["name"] == data["name"]:
+            existing_idx = i
+            break
+    if existing_idx is not None:
+        fish_list[existing_idx] = data
+    else:
+        fish_list.append(data)
+    _db.reload_fish_data(fish_list)
+    return True
+
+
+def admin_delete_fish(name):
+    """删除鱼类数据"""
+    if _db is None:
+        return False
+    fish_list = _db.get_all_fish()
+    fish_list = [f for f in fish_list if f["name"] != name]
+    _db.reload_fish_data(fish_list)
+    return True
+
+
+def admin_get_all_lures():
+    """获取所有鱼饵数据"""
+    if _db is None:
+        return []
+    return _db.get_all_lures()
+
+
+def admin_add_or_update_lure(data):
+    """新增或更新鱼饵"""
+    if _db is None:
+        return False
+    lures = _db.get_all_lures()
+    existing_idx = None
+    for i, lure in enumerate(lures):
+        if lure["name"] == data["name"]:
+            existing_idx = i
+            break
+    if existing_idx is not None:
+        lures[existing_idx] = data
+    else:
+        lures.append(data)
+    _db.reload_lure_data(lures)
+    return True
+
+
+def admin_delete_lure(name):
+    """删除鱼饵"""
+    if _db is None:
+        return False
+    lures = _db.get_all_lures()
+    lures = [lure for lure in lures if lure["name"] != name]
+    _db.reload_lure_data(lures)
+    return True
+
+
+def admin_get_weather():
+    """获取当前天气数据"""
+    if _db is None:
+        return {"current": [], "weather_types": _config.get("weather_types", []) if _config else []}
+    weather_data = _db.get_weather()
+    weather_types = _config.get("weather_types", []) if _config else []
+    return {"current": weather_data, "weather_types": weather_types}
+
+
+def admin_save_weather_types(weather_types):
+    """保存天气类型列表（持久化到DB）"""
+    if not isinstance(weather_types, list) or len(weather_types) == 0:
+        return False
+    global _config
+    if _config is not None:
+        _config["weather_types"] = weather_types
+    if _db is not None:
+        _db.set_config("weather_types", weather_types)
+    return True
+
+
+def admin_set_weather(weather_date, slot, weather_type):
+    """手动设置天气"""
+    if _db is None:
+        return False
+    weather_types = _config.get("weather_types", []) if _config else []
+    if weather_type not in weather_types:
+        return False
+    _db.set_weather(weather_date, slot, weather_type)
+    return True
+
+
+def admin_get_shop():
+    """获取商城商品列表"""
+    if _db is None:
+        return []
+    return _db.get_shop_lures()

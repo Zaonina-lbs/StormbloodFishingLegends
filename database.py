@@ -162,6 +162,12 @@ class Database:
         c.execute(
             "CREATE INDEX IF NOT EXISTS idx_weather_date ON weather(weather_date,slot)"
         )
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS plugin_config (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
 
         # 迁移：为已有的 users 表添加 last_fishing_time 列（如果不存在）
         try:
@@ -177,6 +183,15 @@ class Database:
             )
         except sqlite3.OperationalError:
             pass  # 列已存在
+
+        # 迁移：为 fish_base 表添加 name 唯一约束（如果不存在）
+        try:
+            # 检查是否已有唯一约束
+            c.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_fish_name ON fish_base(name)"
+            )
+        except Exception:
+            pass
 
         self.conn.commit()
         self.close()
@@ -200,8 +215,12 @@ class Database:
         self.init_database()
 
     def import_fish_data(self, fish_list):
+        """导入鱼类初始数据（仅在表中无数据时执行）"""
         self.connect()
-        self.conn.execute("DELETE FROM fish_base")
+        existing = self.conn.execute("SELECT COUNT(*) FROM fish_base").fetchone()[0]
+        if existing > 0:
+            self.close()
+            return  # 已有数据，跳过覆盖
         for fish in fish_list:
             self.conn.execute(
                 "INSERT INTO fish_base(name,region,fishing_ground,bait,weather,fish_type,min_size,min_big_size,max_size,base_value) VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -222,8 +241,12 @@ class Database:
         self.close()
 
     def import_lure_data(self, lure_list):
+        """导入鱼饵初始数据（仅在表中无数据时执行）"""
         self.connect()
-        self.conn.execute("DELETE FROM lures")
+        existing = self.conn.execute("SELECT COUNT(*) FROM lures").fetchone()[0]
+        if existing > 0:
+            self.close()
+            return  # 已有数据，跳过覆盖
         for lure in lure_list:
             sellable = 1 if lure.get("sellable", False) else 0
             price = lure.get("price") if lure.get("price") is not None else 0
@@ -932,8 +955,16 @@ class Database:
 
     # ---- hot reload ----
     def reload_lure_data(self, lure_list):
-        """热更新鱼饵数据"""
+        """热更新鱼饵数据：先删除不在新列表中的，再 upsert"""
         self.connect()
+        keep_names = [lure.get("name", "") for lure in lure_list if lure.get("name")]
+        if keep_names:
+            ph = ",".join(["?"] * len(keep_names))
+            self.conn.execute(
+                f"DELETE FROM lures WHERE name NOT IN ({ph})", keep_names
+            )
+        else:
+            self.conn.execute("DELETE FROM lures")
         for lure in lure_list:
             sellable = 1 if lure.get("sellable", False) else 0
             price = lure.get("price") if lure.get("price") is not None else 0
@@ -944,13 +975,49 @@ class Database:
         self.conn.commit()
         self.close()
 
-    def reload_fish_data(self, fish_list):
-        """热更新鱼基础数据，同步 bait、weather、fish_type、尺寸和基础价值等字段"""
+    # ---- plugin config (for persisting admin settings like weather_types) ----
+    def get_config(self, key, default=None):
         self.connect()
+        row = self.conn.execute("SELECT value FROM plugin_config WHERE key=?", (key,)).fetchone()
+        self.close()
+        if row:
+            import json
+            try:
+                return json.loads(row["value"])
+            except Exception:
+                return row["value"]
+        return default
+
+    def set_config(self, key, value):
+        self.connect()
+        import json
+        self.conn.execute(
+            "INSERT OR REPLACE INTO plugin_config(key,value) VALUES(?,?)",
+            (key, json.dumps(value, ensure_ascii=False)),
+        )
+        self.conn.commit()
+        self.close()
+
+    def reload_fish_data(self, fish_list):
+        """热更新鱼基础数据：先删除不在新列表中的，再 upsert"""
+        self.connect()
+        keep_names = [
+            f.get("name", "") for f in fish_list if f.get("name")
+        ]
+        if keep_names:
+            ph = ",".join(["?"] * len(keep_names))
+            self.conn.execute(
+                f"DELETE FROM fish_base WHERE name NOT IN ({ph})", keep_names
+            )
+        else:
+            self.conn.execute("DELETE FROM fish_base")
         for fish in fish_list:
             self.conn.execute(
-                "UPDATE fish_base SET bait=?, weather=?, fish_type=?, min_size=?, min_big_size=?, max_size=?, base_value=? WHERE name=?",
+                "INSERT OR REPLACE INTO fish_base(name, region, fishing_ground, bait, weather, fish_type, min_size, min_big_size, max_size, base_value) VALUES(?,?,?,?,?,?,?,?,?,?)",
                 (
+                    fish.get("name", ""),
+                    fish.get("region", ""),
+                    fish.get("fishing_ground", ""),
                     fish.get("bait", ""),
                     fish.get("weather", ""),
                     fish.get("fish_type", "普通鱼"),
@@ -958,7 +1025,6 @@ class Database:
                     fish.get("min_big_size", 0),
                     fish.get("max_size", 0),
                     fish.get("base_value", 50),
-                    fish["name"],
                 ),
             )
         self.conn.commit()

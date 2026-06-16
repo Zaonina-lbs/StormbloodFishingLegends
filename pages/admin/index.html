@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>红莲垂钓异闻 - 数据管理</title>
+<style>
+:root {
+  --bg: #f5f7fa; --card-bg: #ffffff; --text: #1a1a1a; --text-secondary: #6b7280;
+  --border: #e5e7eb; --primary: #3b82f6; --primary-hover: #2563eb;
+  --danger: #ef4444; --danger-hover: #dc2626; --success: #10b981;
+  --input-bg: #f9fafb; --radius: 8px; --shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+[data-theme="dark"] {
+  --bg: #1a1a2e; --card-bg: #16213e; --text: #e0e0e0; --text-secondary: #9ca3af;
+  --border: #374151; --primary: #60a5fa; --primary-hover: #3b82f6;
+  --danger: #f87171; --danger-hover: #ef4444; --input-bg: #111827;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 16px; }
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: 16px; color: var(--primary); }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+.tab { padding: 8px 20px; cursor: pointer; border: none; background: none; color: var(--text-secondary); font-size: 0.95rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab:hover { color: var(--primary); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th,td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--input-bg); font-weight: 600; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; }
+tr:hover { background: var(--input-bg); }
+.btn { padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger-hover); }
+.btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+input,select,textarea { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); font-size: 0.9rem; width: 100%; }
+input:focus,select:focus,textarea:focus { outline: none; border-color: var(--primary); }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 0.85rem; color: var(--text-secondary); }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+.badge-king { background: #dbeafe; color: #1d4ed8; }
+.badge-emperor { background: #fce7f3; color: #be185d; }
+.badge-normal { background: #d1fae5; color: #047857; }
+.badge-yes { background: #d1fae5; color: #047857; }
+.badge-no { background: #fee2e2; color: #b91c1c; }
+.toast { position: fixed; top: 16px; right: 16px; padding: 12px 20px; border-radius: 8px; color: #fff; font-weight: 500; z-index: 3000; animation: slideIn 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.toast-success { background: var(--success); }
+.toast-error { background: var(--danger); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.empty { text-align: center; color: var(--text-secondary); padding: 24px; }
+.section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: var(--primary); }
+.weather-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.weather-card { padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--input-bg); }
+.weather-card .date { font-weight: 600; }
+
+/* Modal overlay */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: var(--card-bg); border-radius: var(--radius); padding: 20px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+.modal-box h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--primary); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎣 红莲垂钓异闻 - 数据管理</h1>
+  <div class="tabs">
+    <button class="tab active" data-tab="fish">🐟 鱼类管理</button>
+    <button class="tab" data-tab="lure">🎣 鱼饵管理</button>
+    <button class="tab" data-tab="weather">🌤️ 天气管理</button>
+    <button class="tab" data-tab="shop">🏪 商店配置</button>
+  </div>
+
+  <!-- Fish Panel -->
+  <div id="panel-fish" class="panel active">
+    <div class="card">
+      <div class="section-title">鱼类列表 <button class="btn btn-primary btn-sm" id="btn-add-fish">+ 新增</button></div>
+      <table><thead><tr><th>名称</th><th>种类</th><th>地区</th><th>钓场</th><th>鱼饵</th><th>天气</th><th>尺寸</th><th>价值</th><th>操作</th></tr></thead>
+      <tbody id="fish-tbody"><tr><td colspan="9" class="empty">加载中...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Lure Panel -->
+  <div id="panel-lure" class="panel">
+    <div class="card">
+      <div class="section-title">鱼饵列表 <button class="btn btn-primary btn-sm" id="btn-add-lure">+ 新增</button></div>
+      <table><thead><tr><th>名称</th><th>售价</th><th>可出售</th><th>操作</th></tr></thead>
+      <tbody id="lure-tbody"><tr><td colspan="4" class="empty">加载中...</td></tr></tbody></table>
+    </div>
+  </div>
+
+  <!-- Weather Panel -->
+  <div id="panel-weather" class="panel">
+    <div class="card">
+      <div class="section-title">天气配置</div>
+      <div class="form-group"><label>天气类型列表（逗号分隔）</label><input id="weather-types-input" placeholder="晴朗,碧空,..." /></div>
+      <button class="btn btn-primary" id="btn-save-weather-types">💾 保存天气类型</button>
+    </div>
+    <div class="card">
+      <div class="section-title">当前天气预报 <button class="btn btn-primary btn-sm" id="btn-refresh-weather">🔄 刷新</button></div>
+      <div id="weather-grid" class="weather-grid"><div class="empty">加载中...</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title">手动设置天气</div>
+      <div class="form-row">
+        <div class="form-group"><label>日期</label><input id="set-weather-date" type="date" /></div>
+        <div class="form-group"><label>时段</label><select id="set-weather-slot"><option value="0">白天</option><option value="1">晚上</option></select></div>
+        <div class="form-group"><label>天气</label><select id="set-weather-type"></select></div>
+      </div>
+      <button class="btn btn-primary" id="btn-set-weather">🌤️ 设置天气</button>
+    </div>
+  </div>
+
+  <!-- Shop Panel -->
+  <div id="panel-shop" class="panel">
+    <div class="card">
+      <div class="section-title">商店商品</div>
+      <p style="color:var(--text-secondary);margin-bottom:12px;">商店商品即所有可出售的鱼饵。修改请到"鱼饵管理"标签。</p>
+      <table><thead><tr><th>ID</th><th>名称</th><th>售价</th></tr></thead>
+      <tbody id="shop-tbody"><tr><td colspan="3" class="empty">加载中...</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- Fish Modal -->
+<div class="modal-overlay" id="fish-modal">
+  <div class="modal-box">
+    <h2 id="fish-modal-title">新增鱼类</h2>
+    <input type="hidden" id="fish-id" />
+    <div class="form-row"><div class="form-group"><label>鱼名</label><input id="fish-name" placeholder="如：公主青鳉" /></div><div class="form-group"><label>种类</label><select id="fish-type"><option value="普通鱼">普通鱼</option><option value="鱼王">鱼王</option><option value="鱼皇">鱼皇</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>地区</label><input id="fish-region" placeholder="如：白银乡" /></div><div class="form-group"><label>钓场</label><input id="fish-ground" placeholder="如：白银水路" /></div></div>
+    <div class="form-row"><div class="form-group"><label>鱼饵（空=通杀）</label><input id="fish-bait" placeholder="如：肥蚯蚓" /></div><div class="form-group"><label>天气（空=不限）</label><input id="fish-weather" placeholder="如：小雨/暴雨" /></div></div>
+    <div class="form-row"><div class="form-group"><label>最小尺寸(cm)</label><input id="fish-min-size" type="number" step="0.1" value="3.9" /></div><div class="form-group"><label>大鱼最小尺寸(cm)</label><input id="fish-min-big-size" type="number" step="0.1" value="9.2" /></div><div class="form-group"><label>最大尺寸(cm)</label><input id="fish-max-size" type="number" step="0.1" value="9.7" /></div></div>
+    <div class="form-group"><label>基础价值(G)</label><input id="fish-base-value" type="number" value="50" /></div>
+    <div class="modal-actions"><button class="btn btn-outline" id="btn-fish-cancel">取消</button><button class="btn btn-primary" id="btn-fish-save">💾 保存</button></div>
+  </div>
+</div>
+
+<!-- Lure Modal -->
+<div class="modal-overlay" id="lure-modal">
+  <div class="modal-box">
+    <h2 id="lure-modal-title">新增鱼饵</h2>
+    <input type="hidden" id="lure-id" />
+    <div class="form-row"><div class="form-group"><label>名称</label><input id="lure-name" placeholder="鱼饵名称" /></div><div class="form-group"><label>售价(G)</label><input id="lure-price" type="number" value="200" /></div></div>
+    <div class="form-group"><label>可出售</label><select id="lure-sellable"><option value="1">是</option><option value="0">否</option></select></div>
+    <div class="modal-actions"><button class="btn btn-outline" id="btn-lure-cancel">取消</button><button class="btn btn-primary" id="btn-lure-save">💾 保存</button></div>
+  </div>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
