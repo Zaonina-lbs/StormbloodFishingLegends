@@ -37,6 +37,9 @@ from .game_engine import (
     leaderboard,
     get_distinct_regions,
     get_distinct_grounds,
+    get_distinct_baits,
+    get_all_fish_names,
+    get_distinct_weathers,
     compensate,
     compensate_lure,
     my_info,
@@ -85,10 +88,19 @@ def _json_resp(data, status=200):
     """Build a JSON dict response (Quart-compatible tuple)."""
     import json
 
-    return json.dumps(data, ensure_ascii=False), status, {"Content-Type": "application/json"}
+    return (
+        json.dumps(data, ensure_ascii=False),
+        status,
+        {"Content-Type": "application/json"},
+    )
 
 
-@register("stormblood_fishing_legends", "Zaonina", "红莲垂钓异闻 - FF14群聊钓鱼小游戏", "v1.0.0")
+@register(
+    "stormblood_fishing_legends",
+    "Zaonina",
+    "红莲垂钓异闻 - FF14群聊钓鱼小游戏",
+    "v1.0.0",
+)
 class FishingPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -107,21 +119,48 @@ class FishingPlugin(Star):
     def _register_admin_apis(self, context: Context):
         P = PLUGIN_NAME
         # Fish
-        context.register_web_api(f"/{P}/admin/fish/list", self._api_fish_list, ["GET"], "获取所有鱼")
-        context.register_web_api(f"/{P}/admin/fish/add", self._api_fish_add, ["POST"], "新增鱼类")
-        context.register_web_api(f"/{P}/admin/fish/update", self._api_fish_update, ["POST"], "更新鱼类")
-        context.register_web_api(f"/{P}/admin/fish/delete", self._api_fish_delete, ["POST"], "删除鱼类")
+        context.register_web_api(
+            f"/{P}/admin/fish/list", self._api_fish_list, ["GET"], "获取所有鱼"
+        )
+        context.register_web_api(
+            f"/{P}/admin/fish/add", self._api_fish_add, ["POST"], "新增鱼类"
+        )
+        context.register_web_api(
+            f"/{P}/admin/fish/update", self._api_fish_update, ["POST"], "更新鱼类"
+        )
+        context.register_web_api(
+            f"/{P}/admin/fish/delete", self._api_fish_delete, ["POST"], "删除鱼类"
+        )
         # Lure
-        context.register_web_api(f"/{P}/admin/lure/list", self._api_lure_list, ["GET"], "获取所有鱼饵")
-        context.register_web_api(f"/{P}/admin/lure/add", self._api_lure_add, ["POST"], "新增鱼饵")
-        context.register_web_api(f"/{P}/admin/lure/update", self._api_lure_update, ["POST"], "更新鱼饵")
-        context.register_web_api(f"/{P}/admin/lure/delete", self._api_lure_delete, ["POST"], "删除鱼饵")
+        context.register_web_api(
+            f"/{P}/admin/lure/list", self._api_lure_list, ["GET"], "获取所有鱼饵"
+        )
+        context.register_web_api(
+            f"/{P}/admin/lure/add", self._api_lure_add, ["POST"], "新增鱼饵"
+        )
+        context.register_web_api(
+            f"/{P}/admin/lure/update", self._api_lure_update, ["POST"], "更新鱼饵"
+        )
+        context.register_web_api(
+            f"/{P}/admin/lure/delete", self._api_lure_delete, ["POST"], "删除鱼饵"
+        )
         # Weather
-        context.register_web_api(f"/{P}/admin/weather/list", self._api_weather_list, ["GET"], "获取天气")
-        context.register_web_api(f"/{P}/admin/weather/save-types", self._api_weather_save_types, ["POST"], "保存天气类型")
-        context.register_web_api(f"/{P}/admin/weather/set", self._api_weather_set, ["POST"], "设置天气")
+        context.register_web_api(
+            f"/{P}/admin/weather/list", self._api_weather_list, ["GET"], "获取天气"
+        )
+        context.register_web_api(
+            f"/{P}/admin/weather/save-types",
+            self._api_weather_save_types,
+            ["POST"],
+            "保存天气类型",
+        )
+        context.register_web_api(
+            f"/{P}/admin/weather/set", self._api_weather_set, ["POST"], "设置天气"
+        )
         # Shop
-        context.register_web_api(f"/{P}/admin/shop/list", self._api_shop_list, ["GET"], "获取商店商品")
+        context.register_web_api(
+            f"/{P}/admin/shop/list", self._api_shop_list, ["GET"], "获取商店商品"
+        )
 
     # ============ Admin API Handlers ============
 
@@ -251,7 +290,15 @@ class FishingPlugin(Star):
         bait = args[1] if len(args) >= 2 else None
         fishing_ground = args[2] if len(args) >= 3 else None
         count = args[3] if len(args) >= 4 else None
-        yield event.plain_result(go_fishing(user_id, group_id, bait_param=bait, fishing_ground=fishing_ground, count=count))
+        yield event.plain_result(
+            go_fishing(
+                user_id,
+                group_id,
+                bait_param=bait,
+                fishing_ground=fishing_ground,
+                count=count,
+            )
+        )
 
     @filter.command("查看天气")
     async def cmd_weather(self, event: AstrMessageEvent):
@@ -376,7 +423,9 @@ class FishingPlugin(Star):
         args = parse_args(event.message_str)
         target_user_id = args[1] if len(args) >= 2 else None
         gold = args[2] if len(args) >= 3 else None
-        yield event.plain_result(compensate(operator_id, group_id, target_user_id, gold))
+        yield event.plain_result(
+            compensate(operator_id, group_id, target_user_id, gold)
+        )
 
     @filter.command("我的信息")
     async def cmd_my_info(self, event: AstrMessageEvent):
@@ -394,13 +443,60 @@ class FishingPlugin(Star):
         param2 = args[2] if len(args) >= 3 else None
         regions = get_distinct_regions()
         grounds = get_distinct_grounds()
+        baits = get_distinct_baits()
+        fish_names = get_all_fish_names()
+        fish_types = ["普通鱼", "鱼王", "鱼皇"]
+        weathers = get_distinct_weathers()
         region = None
         fishing_ground = None
+        fish_name = None
+        bait = None
+        fish_type = None
+        weather = None
         page = 1
+        force_fish = False
+        force_bait = False
+
+        # 检查前缀标记: "鱼：X" 或 "鱼饵：X"（支持半角:）
+        for param in (param1, param2):
+            if param is None:
+                continue
+            if param.startswith("鱼：") or param.startswith("鱼:"):
+                force_fish = True
+                stripped = param[2:].strip() if len(param) > 2 else ""
+                if param1 == param:
+                    param1 = stripped or None
+                else:
+                    param2 = stripped or None
+            elif param.startswith("鱼饵：") or param.startswith("鱼饵:") or param.startswith("鱼饵："):
+                force_bait = True
+                if param[2:3] in ("：", ":"):
+                    stripped = param[3:].strip() if len(param) > 3 else ""
+                else:
+                    stripped = param[2:].strip() if len(param) > 2 else ""
+                if param1 == param:
+                    param1 = stripped or None
+                else:
+                    param2 = stripped or None
+
+        # 优先使用前缀标记，没有标记时按原有逻辑
         if param1 is None:
             pass
         elif param2 is not None:
-            if param1 in regions:
+            # 两个参数：优先识别为 [查询条件] [页码]
+            if force_fish and param1:
+                fish_name = param1
+            elif force_bait and param1:
+                bait = param1
+            elif param1 in fish_names:
+                fish_name = param1
+            elif param1 in baits:
+                bait = param1
+            elif param1 in fish_types:
+                fish_type = param1
+            elif param1 in weathers:
+                weather = param1
+            elif param1 in regions:
                 region = param1
             elif param1 in grounds:
                 fishing_ground = param1
@@ -409,17 +505,46 @@ class FishingPlugin(Star):
             except (ValueError, TypeError):
                 page = 1
         else:
-            try:
-                page = int(param1)
-            except (ValueError, TypeError):
-                if param1 in regions:
-                    region = param1
-                elif param1 in grounds:
-                    fishing_ground = param1
-                page = 1
+            # 单个参数
+            if force_fish and param1:
+                fish_name = param1
+            elif force_bait and param1:
+                bait = param1
+            else:
+                try:
+                    page = int(param1)
+                except (ValueError, TypeError):
+                    if param1 in fish_names:
+                        fish_name = param1
+                    elif param1 in baits:
+                        bait = param1
+                    elif param1 in fish_types:
+                        fish_type = param1
+                    elif param1 in weathers:
+                        weather = param1
+                    elif param1 in regions:
+                        region = param1
+                    elif param1 in grounds:
+                        fishing_ground = param1
+                    else:
+                        # 不匹配任何已知类别，默认作为鱼名查询
+                        fish_name = param1
+                    page = 1
         if page < 1:
             page = 1
-        yield event.plain_result(fish_handbook(user_id, group_id, page=page, region=region, fishing_ground=fishing_ground))
+        yield event.plain_result(
+            fish_handbook(
+                user_id,
+                group_id,
+                page=page,
+                region=region,
+                fishing_ground=fishing_ground,
+                fish_name=fish_name,
+                bait=bait,
+                fish_type=fish_type,
+                weather=weather,
+            )
+        )
 
     @filter.command("钓鱼记录")
     async def cmd_fishing_log(self, event: AstrMessageEvent):
@@ -446,7 +571,15 @@ class FishingPlugin(Star):
                 page = int(arg)
             else:
                 fish_name = arg
-        yield event.plain_result(leaderboard(group_id, fish_name=fish_name, size_order=size_order, fish_type=fish_type, page=page))
+        yield event.plain_result(
+            leaderboard(
+                group_id,
+                fish_name=fish_name,
+                size_order=size_order,
+                fish_type=fish_type,
+                page=page,
+            )
+        )
 
     # ============ 管理 ============
 
@@ -461,7 +594,9 @@ class FishingPlugin(Star):
         target_user_id = args[1] if len(args) >= 2 else None
         lure_name = args[2] if len(args) >= 3 else None
         quantity = args[3] if len(args) >= 4 else 1
-        yield event.plain_result(compensate_lure(operator_id, group_id, target_user_id, lure_name, quantity))
+        yield event.plain_result(
+            compensate_lure(operator_id, group_id, target_user_id, lure_name, quantity)
+        )
 
     @filter.command("修改天气")
     async def cmd_set_weather(self, event: AstrMessageEvent):
@@ -472,7 +607,9 @@ class FishingPlugin(Star):
         group_id = event.get_group_id()
         args = parse_args(event.message_str)
         weather_type = args[1] if len(args) >= 2 else None
-        yield event.plain_result(set_weather_command(operator_id, group_id, weather_type))
+        yield event.plain_result(
+            set_weather_command(operator_id, group_id, weather_type)
+        )
 
     async def terminate(self):
         logger.info("红莲垂钓异闻 插件已卸载")

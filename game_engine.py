@@ -751,6 +751,12 @@ def get_fish_help():
         "  /氪金 [金币]\n"
         "  /查看账单\n"
         "\n【图鉴】\n"
+        "  /鱼群图鉴 [鱼名]  - 查询指定鱼的信息\n"
+        "  /鱼群图鉴 鱼：[鱼名]  - 强制作为鱼查询（解决鱼/鱼饵重名）\n"
+        "  /鱼群图鉴 [鱼饵名]  - 查询使用该鱼饵的鱼\n"
+        "  /鱼群图鉴 鱼饵：[鱼饵名]  - 强制作为鱼饵查询\n"
+        "  /鱼群图鉴 [鱼的种类]  - 按种类查询（普通鱼/鱼王/鱼皇）\n"
+        "  /鱼群图鉴 [天气]  - 按天气查询（如：小雨）\n"
         "  /鱼群图鉴 [地区|钓场|页码] [页码]\n"
         "  /钓鱼记录 [页]\n"
         "  /排行榜 [鱼名] [大/小] [鱼的种类] [页码]\n"
@@ -1105,10 +1111,39 @@ def get_distinct_grounds():
     return _db.get_distinct_grounds()
 
 
-def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
+def get_distinct_baits():
+    """获取所有不重复的鱼饵列表"""
+    return _db.get_distinct_baits()
+
+
+def get_all_fish_names():
+    """获取所有鱼名列表"""
+    return _db.get_all_fish_names()
+
+
+def get_distinct_weathers():
+    """获取所有不重复的天气列表"""
+    return _db.get_distinct_weathers()
+
+
+def fish_handbook(
+    user_id,
+    group_id,
+    page=1,
+    region=None,
+    fishing_ground=None,
+    fish_name=None,
+    bait=None,
+    fish_type=None,
+    weather=None,
+):
     """鱼群图鉴 - 分页显示，每页10条
-    参数: user_id, group_id, page(默认1), region(可选地区筛选), fishing_ground(可选钓场筛选)
-    用法: /鱼群图鉴 [地区|钓场|页码] [页码]
+    参数: user_id, group_id, page(默认1), region(可选地区筛选), fishing_ground(可选钓场筛选),
+          fish_name(可选鱼名精确查询), bait(可选鱼饵名查询), fish_type(可选鱼的种类查询: 普通鱼/鱼王/鱼皇)
+    用法: /鱼群图鉴 [鱼名]  - 查询指定鱼的信息
+          /鱼群图鉴 [鱼饵名]  - 查询使用该鱼饵的鱼群信息
+          /鱼群图鉴 [鱼的种类]  - 查询指定种类的鱼群信息
+          /鱼群图鉴 [地区|钓场|页码] [页码]  - 按地区/钓场/页码筛选
     """
     if not user_id:
         return "❌ 请提供 user_id"
@@ -1123,7 +1158,14 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
         page = 1
 
     handbook = _db.get_handbook(
-        user_id, group_id, region=region, fishing_ground=fishing_ground
+        user_id,
+        group_id,
+        region=region,
+        fishing_ground=fishing_ground,
+        fish_name=fish_name,
+        bait=bait,
+        fish_type=fish_type,
+        weather=weather,
     )
     if not handbook:
         return "📖 图鉴数据为空"
@@ -1138,6 +1180,14 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
 
     # 构建图鉴标题
     title_parts = [f"📖 {user_id} 的鱼群图鉴"]
+    if fish_name:
+        title_parts.append(f" [鱼名: {fish_name}]")
+    if bait:
+        title_parts.append(f" [鱼饵: {bait}]")
+    if fish_type:
+        title_parts.append(f" [种类: {fish_type}]")
+    if weather:
+        title_parts.append(f" [天气: {weather}]")
     if region:
         title_parts.append(f" [地区: {region}]")
     if fishing_ground:
@@ -1173,12 +1223,23 @@ def fish_handbook(user_id, group_id, page=1, region=None, fishing_ground=None):
         fish_weather = fish.get("weather", "")
         if fish_weather:
             weather_str = f" 🌤️{fish_weather}"
+
+        # 显示更多详细信息（尺寸、价值）
+        size_info = f" {fish['min_size']:.1f}-{fish['max_size']:.1f}cm"
+        value_info = f" 💰{int(fish['base_value'])}G"
         lines.append(
-            f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{rank_str}{weather_str}"
+            f"    {mark} {fish['name']} ({fish['fish_type']}) {bait_str}{size_info}{value_info}{rank_str}{weather_str}"
         )
 
     if page < total_pages:
-        next_cmd = f"/鱼群图鉴 {page + 1}"
+        next_cmd = "/鱼群图鉴"
+        if fish_name:
+            next_cmd += f" {fish_name}"
+        elif bait:
+            next_cmd += f" {bait}"
+        elif fish_type:
+            next_cmd += f" {fish_type}"
+        next_cmd += f" {page + 1}"
         if region:
             next_cmd += f" {region}"
         if fishing_ground:
@@ -1400,7 +1461,10 @@ def admin_delete_lure(name):
 def admin_get_weather():
     """获取当前天气数据"""
     if _db is None:
-        return {"current": [], "weather_types": _config.get("weather_types", []) if _config else []}
+        return {
+            "current": [],
+            "weather_types": _config.get("weather_types", []) if _config else [],
+        }
     weather_data = _db.get_weather()
     weather_types = _config.get("weather_types", []) if _config else []
     return {"current": weather_data, "weather_types": weather_types}
