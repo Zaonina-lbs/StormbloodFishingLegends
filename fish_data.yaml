@@ -176,7 +176,7 @@ fishes:
   - name: "苦尔鳗"
     region: "红玉海"
     fishing_ground: "红玉炮台近海"
-    bait: "蓝矶沙蚕/苦尔鳗"
+    bait: "蓝矶沙蚕"
     weather: "打雷/阴云"
     fish_type: "鱼王"
     min_size: 47.1
@@ -196,7 +196,7 @@ fishes:
   - name: "黑斑花蛇鳗"
     region: "红玉海"
     fishing_ground: "红玉炮台近海"
-    bait: "蓝矶沙蚕/苦尔鳗"
+    bait: "蓝矶沙蚕"
     weather: ""
     fish_type: "普通鱼"
     min_size: 15.7

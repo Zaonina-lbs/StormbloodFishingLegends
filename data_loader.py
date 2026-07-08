@@ -4,7 +4,10 @@
 
 import openpyxl
 import os
-from .database import get_db
+try:
+    from .database import get_db
+except ImportError:
+    from database import get_db
 
 
 def load_fish_data_from_excel(filepath="fish_data.xlsx"):

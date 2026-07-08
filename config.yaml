@@ -17,7 +17,7 @@ sign_gold_max: 4000
 # 鱼饵概率（百分比 0~100）
 bait_prob_target: 25      # 目标鱼概率
 bait_prob_king: 2         # 鱼王概率
-bait_prob_emperor: 0.2    # 鱼皇概率
+bait_prob_emperor: 0.5    # 鱼皇概率（实际概率，已扣除脱钩）
 
 # 尺寸分布概率（百分比 0~100）
 size_prob_normal: 75      # 普通尺寸概率

@@ -162,12 +162,11 @@ class Database:
         c.execute(
             "CREATE INDEX IF NOT EXISTS idx_weather_date ON weather(weather_date,slot)"
         )
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS plugin_config (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            )
-        """)
+
+        # plugin_config 持久化配置表（天气类型等热更新配置）
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS plugin_config (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+        )
 
         # 迁移：为已有的 users 表添加 last_fishing_time 列（如果不存在）
         try:
@@ -184,15 +183,6 @@ class Database:
         except sqlite3.OperationalError:
             pass  # 列已存在
 
-        # 迁移：为 fish_base 表添加 name 唯一约束（如果不存在）
-        try:
-            # 检查是否已有唯一约束
-            c.execute(
-                "CREATE UNIQUE INDEX IF NOT EXISTS idx_fish_name ON fish_base(name)"
-            )
-        except Exception:
-            pass
-
         self.conn.commit()
         self.close()
 
@@ -204,6 +194,7 @@ class Database:
             "inventory",
             "weather",
             "krypton_log",
+            "plugin_config",
             "lures",
             "fish_base",
             "users",
@@ -215,12 +206,8 @@ class Database:
         self.init_database()
 
     def import_fish_data(self, fish_list):
-        """导入鱼类初始数据（仅在表中无数据时执行）"""
         self.connect()
-        existing = self.conn.execute("SELECT COUNT(*) FROM fish_base").fetchone()[0]
-        if existing > 0:
-            self.close()
-            return  # 已有数据，跳过覆盖
+        self.conn.execute("DELETE FROM fish_base")
         for fish in fish_list:
             self.conn.execute(
                 "INSERT INTO fish_base(name,region,fishing_ground,bait,weather,fish_type,min_size,min_big_size,max_size,base_value) VALUES(?,?,?,?,?,?,?,?,?,?)",
@@ -241,12 +228,8 @@ class Database:
         self.close()
 
     def import_lure_data(self, lure_list):
-        """导入鱼饵初始数据（仅在表中无数据时执行）"""
         self.connect()
-        existing = self.conn.execute("SELECT COUNT(*) FROM lures").fetchone()[0]
-        if existing > 0:
-            self.close()
-            return  # 已有数据，跳过覆盖
+        self.conn.execute("DELETE FROM lures")
         for lure in lure_list:
             sellable = 1 if lure.get("sellable", False) else 0
             price = lure.get("price") if lure.get("price") is not None else 0
@@ -882,19 +865,9 @@ class Database:
         return [dict(r) for r in rows]
 
     # ---- handbook ----
-    def get_handbook(
-        self,
-        user_id,
-        group_id,
-        region=None,
-        fishing_ground=None,
-        fish_name=None,
-        bait=None,
-        fish_type=None,
-        weather=None,
-    ):
-        """获取图鉴数据，支持按地区、钓场、鱼名、鱼饵、鱼的种类筛选。
-        返回按 region、fishing_ground、fish_type、name 排序的列表，
+    def get_handbook(self, user_id, group_id, region=None, fishing_ground=None):
+        """获取图鉴数据，支持按地区和/或钓场筛选。
+        返回按 region→fishing_ground→fish_type→name 排序的列表，
         包含 bait、base_value、min_size、max_size 等信息。"""
         self.connect()
         query = "SELECT DISTINCT name,fish_type,region,fishing_ground,bait,weather,base_value,min_size,min_big_size,max_size FROM fish_base"
@@ -906,24 +879,6 @@ class Database:
         if fishing_ground:
             conditions.append("fishing_ground=?")
             params.append(fishing_ground)
-        if fish_name:
-            conditions.append("name=?")
-            params.append(fish_name)
-        if bait:
-            # 支持多鱼饵：bait 字段可能为 "嗡嗡石蝇/蓝矶沙蚕" 格式
-            conditions.append("(bait=? OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
-            params.extend([bait, bait + "/%", "%/" + bait, "%/" + bait + "/%"])
-        if fish_type:
-            conditions.append("fish_type=?")
-            params.append(fish_type)
-        if weather:
-            # weather 字段支持 "小雨/暴雨" 这种多天气格式
-            conditions.append(
-                "(weather=? OR weather LIKE ? OR weather LIKE ? OR weather LIKE ?)"
-            )
-            params.extend(
-                [weather, weather + "/%", "%/" + weather, "%/" + weather + "/%"]
-            )
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY region, fishing_ground, fish_type, name"
@@ -938,40 +893,12 @@ class Database:
         if fishing_ground:
             q += " AND fishing_ground=?"
             cq_params.append(fishing_ground)
-        if fish_name:
-            q += " AND fish_name=?"
-            cq_params.append(fish_name)
         rows = self.conn.execute(q, cq_params).fetchall()
         caught = {r["fish_name"] for r in rows}
         self.close()
         for f in bf:
             f["obtained"] = f["name"] in caught
         return bf
-
-    def get_distinct_baits(self):
-        """获取所有不重复的鱼饵列表（从 fish_base 中提取）"""
-        self.connect()
-        rows = self.conn.execute(
-            "SELECT DISTINCT bait FROM fish_base WHERE bait != '' ORDER BY bait"
-        ).fetchall()
-        self.close()
-        baits = set()
-        for r in rows:
-            bait_str = r["bait"]
-            for b in bait_str.split("/"):
-                b = b.strip()
-                if b:
-                    baits.add(b)
-        return sorted(baits)
-
-    def get_all_fish_names(self):
-        """获取所有鱼名列表"""
-        self.connect()
-        rows = self.conn.execute(
-            "SELECT DISTINCT name FROM fish_base ORDER BY name"
-        ).fetchall()
-        self.close()
-        return [r["name"] for r in rows]
 
     def get_distinct_regions(self):
         """获取所有不重复的区域列表"""
@@ -991,22 +918,6 @@ class Database:
         self.close()
         return [r["fishing_ground"] for r in rows]
 
-    def get_distinct_weathers(self):
-        """获取所有不重复的天气列表（从 fish_base 的 weather 字段中提取）"""
-        self.connect()
-        rows = self.conn.execute(
-            "SELECT DISTINCT weather FROM fish_base WHERE weather != '' ORDER BY weather"
-        ).fetchall()
-        self.close()
-        weathers = set()
-        for r in rows:
-            weather_str = r["weather"]
-            for w in weather_str.split("/"):
-                w = w.strip()
-                if w:
-                    weathers.add(w)
-        return sorted(weathers)
-
     def get_handbook_user_ranking(self, group_id, fish_name, user_id=None):
         """获取当前用户在某个鱼种的排行（按尺寸降序）"""
         self.connect()
@@ -1025,16 +936,38 @@ class Database:
         self.close()
         return row["rank"] if row else None
 
+
+    # ---- plugin config ----
+    def get_config(self, key):
+        """获取持久化配置值"""
+        self.connect()
+        row = self.conn.execute(
+            "SELECT value FROM plugin_config WHERE key=?", (key,)
+        ).fetchone()
+        self.close()
+        if row:
+            import json
+            try:
+                return json.loads(row["value"])
+            except (json.JSONDecodeError, TypeError):
+                return row["value"]
+        return None
+
+    def set_config(self, key, value):
+        """设置持久化配置值"""
+        import json
+        self.connect()
+        self.conn.execute(
+            "INSERT OR REPLACE INTO plugin_config(key,value) VALUES(?,?)",
+            (key, json.dumps(value, ensure_ascii=False)),
+        )
+        self.conn.commit()
+        self.close()
+
     # ---- hot reload ----
     def reload_lure_data(self, lure_list):
-        """热更新鱼饵数据：先删除不在新列表中的，再 upsert"""
+        """热更新鱼饵数据"""
         self.connect()
-        keep_names = [lure.get("name", "") for lure in lure_list if lure.get("name")]
-        if keep_names:
-            ph = ",".join(["?"] * len(keep_names))
-            self.conn.execute(f"DELETE FROM lures WHERE name NOT IN ({ph})", keep_names)
-        else:
-            self.conn.execute("DELETE FROM lures")
         for lure in lure_list:
             sellable = 1 if lure.get("sellable", False) else 0
             price = lure.get("price") if lure.get("price") is not None else 0
@@ -1045,51 +978,13 @@ class Database:
         self.conn.commit()
         self.close()
 
-    # ---- plugin config (for persisting admin settings like weather_types) ----
-    def get_config(self, key, default=None):
-        self.connect()
-        row = self.conn.execute(
-            "SELECT value FROM plugin_config WHERE key=?", (key,)
-        ).fetchone()
-        self.close()
-        if row:
-            import json
-
-            try:
-                return json.loads(row["value"])
-            except Exception:
-                return row["value"]
-        return default
-
-    def set_config(self, key, value):
-        self.connect()
-        import json
-
-        self.conn.execute(
-            "INSERT OR REPLACE INTO plugin_config(key,value) VALUES(?,?)",
-            (key, json.dumps(value, ensure_ascii=False)),
-        )
-        self.conn.commit()
-        self.close()
-
     def reload_fish_data(self, fish_list):
-        """热更新鱼基础数据：先删除不在新列表中的，再 upsert"""
+        """热更新鱼基础数据，同步 bait、weather、fish_type、尺寸和基础价值等字段"""
         self.connect()
-        keep_names = [f.get("name", "") for f in fish_list if f.get("name")]
-        if keep_names:
-            ph = ",".join(["?"] * len(keep_names))
-            self.conn.execute(
-                f"DELETE FROM fish_base WHERE name NOT IN ({ph})", keep_names
-            )
-        else:
-            self.conn.execute("DELETE FROM fish_base")
         for fish in fish_list:
             self.conn.execute(
-                "INSERT OR REPLACE INTO fish_base(name, region, fishing_ground, bait, weather, fish_type, min_size, min_big_size, max_size, base_value) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                "UPDATE fish_base SET bait=?, weather=?, fish_type=?, min_size=?, min_big_size=?, max_size=?, base_value=? WHERE name=?",
                 (
-                    fish.get("name", ""),
-                    fish.get("region", ""),
-                    fish.get("fishing_ground", ""),
                     fish.get("bait", ""),
                     fish.get("weather", ""),
                     fish.get("fish_type", "普通鱼"),
@@ -1097,6 +992,7 @@ class Database:
                     fish.get("min_big_size", 0),
                     fish.get("max_size", 0),
                     fish.get("base_value", 50),
+                    fish["name"],
                 ),
             )
         self.conn.commit()

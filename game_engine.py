@@ -525,17 +525,72 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
         prob_target = _config.get("bait_prob_target", 25)
         prob_king = _config.get("bait_prob_king", 2)
         prob_emperor = _config.get("bait_prob_emperor", 0.2)
-        # 当鱼皇使用的鱼饵本身就是鱼王时，将鱼皇概率提升至鱼王级别
-        # 因为玩家已经付出了获取鱼王的努力，鱼皇不应再用极低基础概率
+        # 配置中的概率为最终实际概率（已含脱钩），反算为引擎判定基准值
+        # 实际概率 = 判定基准 × (1 - 脱钩率)
+        fail_rate_config = _config.get("fishing_fail_rate", 0) / 100.0
+        if fail_rate_config < 1:
+            prob_target = prob_target / (1 - fail_rate_config)
+            prob_king = prob_king / (1 - fail_rate_config)
+            prob_emperor = prob_emperor / (1 - fail_rate_config)
+        # 当鱼皇使用的鱼饵本身就是某种鱼时，根据鱼饵类型提升鱼皇概率
+        # 设计目标：无论哪种链式路径，最终期望都是约200杆（CD有效杆）一条鱼皇
+        # 鱼王作饵 → 鱼皇概率提升至目标鱼级别（25%），约4条鱼王=1条鱼皇
+        # 普通鱼作饵 → 鱼皇概率提升至鱼王级别（2%），约50条普通鱼=1条鱼皇
         prob_emperor_effective = prob_emperor
+        emperor_boosted_to_target = False  # 是否已提升至 prob_target 级别
         if emperor_fish:
             bait_fish = _db.get_fish_by_name(effective_bait)
             if bait_fish and bait_fish[0].get("fish_type") == "鱼王":
-                prob_emperor_effective = prob_king
+                prob_emperor_effective = prob_target
+                emperor_boosted_to_target = True
                 if show_debug:
                     _debug(
                         f"鱼皇饵为鱼王({effective_bait})，鱼皇概率提升至 {prob_emperor_effective}%"
                     )
+            elif bait_fish and bait_fish[0].get("fish_type") == "普通鱼":
+                prob_emperor_effective = prob_king
+                if show_debug:
+                    _debug(
+                        f"鱼皇饵为普通鱼({effective_bait})，鱼皇概率提升至 {prob_emperor_effective}%"
+                    )
+
+        # 当鱼池中没有普通鱼时，将普通鱼的 roll 区间分配给稀有鱼
+        # 否则 prob_target 这一整段区间会全部落入「没有鱼上钩」，极不合理
+        # 注意：如果鱼皇已被提升至 prob_target 级别，则 prob_target 区间已被消耗，无需再分配
+        if not normal_fish:
+            if emperor_fish and king_fish:
+                total_rare = prob_emperor_effective + prob_king
+                if emperor_boosted_to_target:
+                    # 鱼皇已占 prob_target，只需为鱼王分配 prob_target 空间
+                    total_rare += prob_target
+                    prob_king += prob_target
+                    if show_debug:
+                        _debug(
+                            f"无普通鱼，概率重分配：鱼皇 {prob_emperor_effective:.1f}% 鱼王 {prob_king:.1f}%"
+                        )
+                elif total_rare > 0:
+                    scale = (total_rare + prob_target) / total_rare
+                    prob_emperor_effective *= scale
+                    prob_king *= scale
+                    if show_debug:
+                        _debug(
+                            f"无普通鱼，概率重分配：鱼皇 {prob_emperor_effective:.1f}% 鱼王 {prob_king:.1f}%"
+                        )
+            elif emperor_fish:
+                if not emperor_boosted_to_target:
+                    prob_emperor_effective += prob_target
+                # 如果已提升至 prob_target，无需再分配
+                if show_debug:
+                    _debug(
+                        f"无普通鱼，概率重分配：鱼皇 {prob_emperor_effective:.1f}%"
+                    )
+            elif king_fish:
+                prob_king += prob_target
+                if show_debug:
+                    _debug(
+                        f"无普通鱼，概率重分配：鱼王 {prob_king:.1f}%"
+                    )
+
         roll = random.uniform(0, 100)
         if show_debug:
             _debug(f"概率判定 roll={roll:.1f}")
