@@ -35,6 +35,8 @@ from .game_engine import (
     leaderboard,
     get_distinct_regions,
     get_distinct_grounds,
+    get_distinct_baits,
+    get_all_fish_names,
     compensate,
     compensate_lure,
     my_info,
@@ -315,64 +317,110 @@ class FishingPlugin(Star):
 
     @filter.command("鱼群图鉴")
     async def cmd_handbook(self, event: AstrMessageEvent):
-        """查看鱼群图鉴：/鱼群图鉴 [地区|钓场|页码] [页码]
+        """查看鱼群图鉴：/鱼群图鉴 [鱼名|鱼饵|种类|天气|地区|钓场|页码]
         用法：
-          /鱼群图鉴              → 全地区第1页
-          /鱼群图鉴 2            → 全地区第2页
-          /鱼群图鉴 红玉海       → 红玉海地区第1页
-          /鱼群图鉴 红玉海 2     → 红玉海地区第2页
-          /鱼群图鉴 白银水路     → 白银水路钓场第1页
-          /鱼群图鉴 白银水路 2   → 白银水路钓场第2页
+          /鱼群图鉴                    → 全地区第1页
+          /鱼群图鉴 红龙              → 按鱼名查询
+          /鱼群图鉴 鱼：红龙          → 强制作为鱼名查询
+          /鱼群图鉴 嗡嗡石蝇          → 按鱼饵查询
+          /鱼群图鉴 鱼饵：嗡嗡石蝇    → 强制作为鱼饵查询
+          /鱼群图鉴 鱼王              → 按种类查询
+          /鱼群图鉴 小雨              → 按天气查询
+          /鱼群图鉴 红玉海            → 按地区查询
+          /鱼群图鉴 白银水路          → 按钓场查询
+          /鱼群图鉴 2                 → 全地区第2页
+          /鱼群图鉴 红玉海 2          → 红玉海第2页
         """
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
-        args = parse_args(event.message_str)
-        # args[0] = "鱼群图鉴"
-        param1 = args[1] if len(args) >= 2 else None
-        param2 = args[2] if len(args) >= 3 else None
+        msg = event.message_str.strip()
+        # Remove the command prefix
+        if msg.startswith("/鱼群图鉴"):
+            msg = msg[len("/鱼群图鉴"):].strip()
+        elif msg.startswith("鱼群图鉴"):
+            msg = msg[len("鱼群图鉴"):].strip()
 
-        # 获取所有地区和钓场名称，用于智能匹配
-        regions = get_distinct_regions()
-        grounds = get_distinct_grounds()
-
+        # Parse parameters
         region = None
         fishing_ground = None
+        fish_name = None
+        bait = None
+        fish_type = None
+        weather = None
         page = 1
 
-        if param1 is None:
-            # /鱼群图鉴 → 全地区第1页
-            pass
-        elif param2 is not None:
-            # 有2个参数: /鱼群图鉴 param1 param2
-            # param1 是地区或钓场，param2 是页码
-            if param1 in regions:
-                region = param1
-            elif param1 in grounds:
-                fishing_ground = param1
-            # param2 始终作为页码处理（如果不是数字会fallback到1）
-            try:
-                page = int(param2)
-            except (ValueError, TypeError):
-                page = 1
+        if not msg:
+            pass  # no args → all
         else:
-            # 只有1个参数: /鱼群图鉴 param1
-            # 判断是数字(页码)、地区还是钓场
-            try:
-                page = int(param1)
-                # 纯数字 → 全地区，页码=param1
-            except (ValueError, TypeError):
-                # 非数字 → 判断是地区还是钓场
-                if param1 in regions:
-                    region = param1
-                elif param1 in grounds:
-                    fishing_ground = param1
-                page = 1
+            regions = get_distinct_regions()
+            grounds = get_distinct_grounds()
+            all_fish = get_all_fish_names()
+            all_baits = get_distinct_baits()
+            weather_types = self.config.get("weather_types", [])
+            fish_types = ["普通鱼", "鱼王", "鱼皇"]
 
-        if page < 1:
-            page = 1
+            # Tokenize: handle quotes
+            try:
+                tokens = shlex.split(msg)
+            except ValueError:
+                tokens = msg.split()
+
+            for token in tokens:
+                if token.isdigit():
+                    page = int(token)
+                    continue
+
+                # Priority: region > fish_type > explicit bait > explicit fish > fish_name > bait
+                # When a name is both fish and bait (e.g. 岩盐咸鱼), default to fish_name
+
+                # Check region (highest priority)
+                if token in regions:
+                    region = token
+                    continue
+
+                # Check fish_type
+                if token in fish_types:
+                    fish_type = token
+                    continue
+
+                # Explicit bait prefix
+                if token.startswith("鱼饵："):
+                    bait = token[3:]
+                    continue
+
+                # Explicit fish prefix
+                if token.startswith("鱼："):
+                    fish_name = token[2:]
+                    continue
+
+                # Check weather
+                if token in weather_types:
+                    weather = token
+                    continue
+
+                # Check ground
+                if token in grounds:
+                    fishing_ground = token
+                    continue
+
+                # Check fish name (priority over bait when ambiguous)
+                if token in all_fish:
+                    fish_name = token
+                    continue
+
+                # Check bait (lowest priority)
+                if token in all_baits:
+                    bait = token
+                    continue
+
+            if page < 1:
+                page = 1
 
         result = fish_handbook(
-            user_id, group_id, page=page, region=region, fishing_ground=fishing_ground
+            user_id, group_id, page=page,
+            region=region, fishing_ground=fishing_ground,
+            fish_name=fish_name, bait=bait,
+            fish_type=fish_type, weather=weather,
         )
         yield event.plain_result(result)
 

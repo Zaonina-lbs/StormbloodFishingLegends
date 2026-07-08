@@ -931,6 +931,31 @@ class Database:
         self.close()
         return [r["fishing_ground"] for r in rows]
 
+    def get_distinct_baits(self):
+        """获取所有不重复的鱼饵名称列表（拆分 / 分隔的多鱼饵）"""
+        self.connect()
+        rows = self.conn.execute(
+            "SELECT DISTINCT bait FROM fish_base WHERE bait != ''"
+        ).fetchall()
+        self.close()
+        baits = set()
+        for r in rows:
+            for b in r["bait"].split("/"):
+                b = b.strip()
+                if b:
+                    baits.add(b)
+        return sorted(baits)
+
+    def get_all_fish_names(self):
+        """获取所有鱼名列表"""
+        self.connect()
+        rows = self.conn.execute(
+            "SELECT DISTINCT name FROM fish_base ORDER BY name"
+        ).fetchall()
+        self.close()
+        return [r["name"] for r in rows]
+
+
     def get_handbook_user_ranking(self, group_id, fish_name, user_id=None):
         """获取当前用户在某个鱼种的排行（按尺寸降序）"""
         self.connect()
