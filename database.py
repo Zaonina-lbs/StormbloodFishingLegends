@@ -865,7 +865,8 @@ class Database:
         return [dict(r) for r in rows]
 
     # ---- handbook ----
-    def get_handbook(self, user_id, group_id, region=None, fishing_ground=None):
+    def get_handbook(self, user_id, group_id, region=None, fishing_ground=None,
+                     fish_name=None, bait=None, fish_type=None, weather=None):
         """获取图鉴数据，支持按地区和/或钓场筛选。
         返回按 region→fishing_ground→fish_type→name 排序的列表，
         包含 bait、base_value、min_size、max_size 等信息。"""
@@ -879,6 +880,18 @@ class Database:
         if fishing_ground:
             conditions.append("fishing_ground=?")
             params.append(fishing_ground)
+        if fish_name:
+            conditions.append("name LIKE ?")
+            params.append(f"%{fish_name}%")
+        if bait:
+            conditions.append("(bait=? OR bait='' OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
+            params.extend([bait, bait + "/%", "%/" + bait, "%/" + bait + "/%"])
+        if fish_type:
+            conditions.append("fish_type=?")
+            params.append(fish_type)
+        if weather:
+            conditions.append("(weather='' OR weather LIKE ?)")
+            params.append(f"%{weather}%")
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY region, fishing_ground, fish_type, name"

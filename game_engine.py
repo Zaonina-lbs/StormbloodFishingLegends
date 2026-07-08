@@ -555,14 +555,13 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
                     )
 
         # 当鱼池中没有普通鱼时，将普通鱼的 roll 区间分配给稀有鱼
-        # 否则 prob_target 这一整段区间会全部落入「没有鱼上钩」，极不合理
-        # 注意：如果鱼皇已被提升至 prob_target 级别，则 prob_target 区间已被消耗，无需再分配
+        # 注意：仅当鱼皇和鱼王同时存在时才进行比例重分配
+        # 单独只有鱼王或鱼皇时不再额外分配，保持基础概率，避免稀有鱼泛滥
         if not normal_fish:
             if emperor_fish and king_fish:
                 total_rare = prob_emperor_effective + prob_king
                 if emperor_boosted_to_target:
                     # 鱼皇已占 prob_target，只需为鱼王分配 prob_target 空间
-                    total_rare += prob_target
                     prob_king += prob_target
                     if show_debug:
                         _debug(
@@ -576,20 +575,8 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
                         _debug(
                             f"无普通鱼，概率重分配：鱼皇 {prob_emperor_effective:.1f}% 鱼王 {prob_king:.1f}%"
                         )
-            elif emperor_fish:
-                if not emperor_boosted_to_target:
-                    prob_emperor_effective += prob_target
-                # 如果已提升至 prob_target，无需再分配
-                if show_debug:
-                    _debug(
-                        f"无普通鱼，概率重分配：鱼皇 {prob_emperor_effective:.1f}%"
-                    )
-            elif king_fish:
-                prob_king += prob_target
-                if show_debug:
-                    _debug(
-                        f"无普通鱼，概率重分配：鱼王 {prob_king:.1f}%"
-                    )
+            # 单独只有鱼皇或鱼王：不再将 prob_target 分配给单一稀有鱼
+            # 维持基础概率设计，避免指定钓场时稀有鱼泛滥
 
         roll = random.uniform(0, 100)
         if show_debug:
