@@ -975,6 +975,63 @@ class Database:
         return row["rank"] if row else None
 
 
+
+    def get_distinct_weathers(self):
+        """获取所有不重复的天气列表（从 fish_base 表的 weather 字段拆分 / 分隔的多天气）"""
+        self.connect()
+        rows = self.conn.execute(
+            "SELECT DISTINCT weather FROM fish_base WHERE weather != ''"
+        ).fetchall()
+        self.close()
+        weathers = set()
+        for r in rows:
+            for w in r["weather"].split("/"):
+                w = w.strip()
+                if w:
+                    weathers.add(w)
+        return sorted(weathers)
+
+    def get_unobtained(self, user_id, group_id, region=None, fishing_ground=None,
+                       bait=None, weather=None):
+        """获取未获取的鱼列表，支持按地区和/或钓场、鱼饵、天气筛选。
+        返回按 region→fishing_ground→fish_type→name 排序的列表，
+        包含 bait、base_value、min_size、max_size 等信息。
+        仅返回该用户尚未钓到的鱼。"""
+        self.connect()
+        query = "SELECT DISTINCT name,fish_type,region,fishing_ground,bait,weather,base_value,min_size,min_big_size,max_size FROM fish_base"
+        conditions = []
+        params = []
+        if region:
+            conditions.append("region=?")
+            params.append(region)
+        if fishing_ground:
+            conditions.append("fishing_ground=?")
+            params.append(fishing_ground)
+        if bait:
+            conditions.append("(bait=? OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
+            params.extend([bait, bait + "/%", "%/" + bait, "%/" + bait + "/%"])
+        if weather:
+            conditions.append("(weather='' OR weather LIKE ?)")
+            params.append(f"%{weather}%")
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY region, fishing_ground, fish_type, name"
+        bf = self.conn.execute(query, params).fetchall()
+        bf = [dict(r) for r in bf]
+
+        # 获取用户已钓到的鱼名
+        cq = "SELECT DISTINCT fish_name FROM fishing_log WHERE user_id=? AND group_id=?"
+        cq_params = [user_id, group_id]
+        rows = self.conn.execute(cq, cq_params).fetchall()
+        caught = {r["fish_name"] for r in rows}
+        self.close()
+
+        # 仅返回未钓到的鱼
+        result = [f for f in bf if f["name"] not in caught]
+        for f in result:
+            f["obtained"] = False
+        return result
+
     # ---- plugin config ----
     def get_config(self, key):
         """获取持久化配置值"""

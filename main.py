@@ -36,11 +36,13 @@ from .game_engine import (
     get_distinct_regions,
     get_distinct_grounds,
     get_distinct_baits,
+    get_distinct_weathers,
     get_all_fish_names,
     compensate,
     compensate_lure,
     my_info,
     set_weather_command,
+    unobtained_fish,
 )
 
 # AstrBot 路径工具
@@ -421,6 +423,79 @@ class FishingPlugin(Star):
             region=region, fishing_ground=fishing_ground,
             fish_name=fish_name, bait=bait,
             fish_type=fish_type, weather=weather,
+        )
+        yield event.plain_result(result)
+
+
+    @filter.command("未获取")
+    async def cmd_unobtained(self, event: AstrMessageEvent):
+        """查询未获取的鱼：/未获取 [地区|钓场] [天气] [鱼饵] [页码]
+        用法：
+          /未获取                      → 全地区全天气全鱼饵第1页
+          /未获取 薄雾 嗡嗡石蝇        → 薄雾天气下使用嗡嗡石蝇的未获取鱼
+          /未获取 红玉海 2             → 红玉海第2页
+          /未获取 晴朗                 → 晴朗天气下未获取的鱼
+        """
+        user_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        msg = event.message_str.strip()
+        # Remove the command prefix
+        if msg.startswith("/未获取"):
+            msg = msg[len("/未获取"):].strip()
+        elif msg.startswith("未获取"):
+            msg = msg[len("未获取"):].strip()
+
+        # Parse parameters
+        region = None
+        fishing_ground = None
+        bait = None
+        weather = None
+        page = 1
+
+        if msg:
+            regions = get_distinct_regions()
+            grounds = get_distinct_grounds()
+            all_baits = get_distinct_baits()
+            all_weathers = get_distinct_weathers()
+
+            # Tokenize: handle quotes
+            try:
+                tokens = shlex.split(msg)
+            except ValueError:
+                tokens = msg.split()
+
+            for token in tokens:
+                if token.isdigit():
+                    page = int(token)
+                    continue
+
+                # Check region (highest priority)
+                if token in regions:
+                    region = token
+                    continue
+
+                # Check fishing ground
+                if token in grounds:
+                    fishing_ground = token
+                    continue
+
+                # Check weather
+                if token in all_weathers:
+                    weather = token
+                    continue
+
+                # Check bait
+                if token in all_baits:
+                    bait = token
+                    continue
+
+            if page < 1:
+                page = 1
+
+        result = unobtained_fish(
+            user_id, group_id, page=page,
+            region=region, fishing_ground=fishing_ground,
+            bait=bait, weather=weather,
         )
         yield event.plain_result(result)
 

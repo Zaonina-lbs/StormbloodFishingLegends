@@ -800,6 +800,7 @@ def get_fish_help():
         "  /鱼群图鉴 [鱼的种类]  - 按种类查询（普通鱼/鱼王/鱼皇）\n"
         "  /鱼群图鉴 [天气]  - 按天气查询（如：小雨）\n"
         "  /鱼群图鉴 [地区|钓场|页码] [页码]\n"
+        "  /未获取 [地区|钓场] [天气] [鱼饵] [页码]  - 查询未钓到的鱼\n"
         "  /钓鱼记录 [页]\n"
         "  /排行榜 [鱼名] [大/小] [鱼的种类] [页码]\n"
         "\n【管理员】\n"
@@ -1288,6 +1289,109 @@ def fish_handbook(
             next_cmd += f" {fishing_ground}"
         lines.append(f"\n  下一页：{next_cmd}")
     return "\n".join(lines)
+
+
+def unobtained_fish(
+    user_id,
+    group_id,
+    page=1,
+    region=None,
+    fishing_ground=None,
+    bait=None,
+    weather=None,
+):
+    """查询未获取的鱼 - 分页显示，每页10条
+    参数: user_id, group_id, page(默认1), region(可选地区筛选), fishing_ground(可选钓场筛选),
+          bait(可选鱼饵名查询), weather(可选天气筛选)
+    用法: /未获取 [地区|钓场] [天气] [鱼饵] [页码]
+    """
+    if not user_id:
+        return "❌ 请提供 user_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+
+    try:
+        page = int(page) if page else 1
+    except (ValueError, TypeError):
+        page = 1
+    if page < 1:
+        page = 1
+
+    fish_list = _db.get_unobtained(
+        user_id,
+        group_id,
+        region=region,
+        fishing_ground=fishing_ground,
+        bait=bait,
+        weather=weather,
+    )
+    if not fish_list:
+        return "🎉 恭喜！符合条件的鱼已经全部获取完毕！"
+
+    page_size = 10
+    total = len(fish_list)
+    total_pages = (total + page_size - 1) // page_size
+    if page > total_pages:
+        page = total_pages
+    start = (page - 1) * page_size
+    page_data = fish_list[start : start + page_size]
+
+    # 构建标题
+    title_parts = [f"❓ {user_id} 未获取的鱼"]
+    if region:
+        title_parts.append(f" [地区: {region}]")
+    if fishing_ground:
+        title_parts.append(f" [钓场: {fishing_ground}]")
+    if bait:
+        title_parts.append(f" [鱼饵: {bait}]")
+    if weather:
+        title_parts.append(f" [天气: {weather}]")
+    title_parts.append(f" （第 {page}/{total_pages} 页，共 {total} 种未获取）")
+    lines = ["".join(title_parts)]
+
+    # 按区域+钓场分组展示
+    current_region = None
+    current_ground = None
+    for fish in page_data:
+        bait_str = (
+            f"({fish.get('bait', '') or '通杀'})" if fish.get("bait") else "(通杀)"
+        )
+
+        rregion = fish.get("region", "未知")
+        ground = fish.get("fishing_ground", "未知")
+        if rregion != current_region:
+            lines.append(f"\n  📍 {rregion}")
+            current_region = rregion
+            current_ground = None
+        if ground != current_ground:
+            lines.append(f"    🎣 {ground}")
+            current_ground = ground
+
+        weather_str = ""
+        fish_weather = fish.get("weather", "")
+        if fish_weather:
+            weather_str = f" 🌤️{fish_weather}"
+
+        size_info = f" {fish['min_size']:.1f}-{fish['max_size']:.1f}cm"
+        value_info = f" 💰{int(fish['base_value'])}G"
+        lines.append(
+            f"    ❌ {fish['name']} ({fish['fish_type']}) {bait_str}{size_info}{value_info}{weather_str}"
+        )
+
+    if page < total_pages:
+        next_cmd = "/未获取"
+        if region:
+            next_cmd += f" {region}"
+        if fishing_ground:
+            next_cmd += f" {fishing_ground}"
+        if weather:
+            next_cmd += f" {weather}"
+        if bait:
+            next_cmd += f" {bait}"
+        next_cmd += f" {page + 1}"
+        lines.append(f"\n  下一页：{next_cmd}")
+    return "\n".join(lines)
+
 
 
 def fishing_log(user_id, group_id, page=1):
