@@ -884,13 +884,13 @@ class Database:
             conditions.append("name LIKE ?")
             params.append(f"%{fish_name}%")
         if bait:
-            conditions.append("(bait=? OR bait='' OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
+            conditions.append("(bait=? OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
             params.extend([bait, bait + "/%", "%/" + bait, "%/" + bait + "/%"])
         if fish_type:
             conditions.append("fish_type=?")
             params.append(fish_type)
         if weather:
-            conditions.append("(weather='' OR weather LIKE ?)")
+            conditions.append("weather LIKE ?")
             params.append(f"%{weather}%")
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
@@ -1011,7 +1011,7 @@ class Database:
             conditions.append("(bait=? OR bait LIKE ? OR bait LIKE ? OR bait LIKE ?)")
             params.extend([bait, bait + "/%", "%/" + bait, "%/" + bait + "/%"])
         if weather:
-            conditions.append("(weather='' OR weather LIKE ?)")
+            conditions.append("weather LIKE ?")
             params.append(f"%{weather}%")
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
