@@ -506,6 +506,9 @@ def _do_single_fish(user_id, group_id, effective_bait, fishing_ground, show_debu
         _db.update_user_gold(user_id, group_id, -_config.get("default_bait_price", 100))
     else:
         _db.remove_lure(user_id, group_id, effective_bait, 1)
+        # 如果使用的鱼饵同时也是鱼塘中的鱼，从鱼塘中消耗一条
+        if _db.is_fish_a_lure(effective_bait):
+            _db.consume_pond_fish(user_id, group_id, effective_bait, 1)
 
     # 按类型分组
     normal_fish = [f for f in candidate_fish if f["fish_type"] == "普通鱼"]
@@ -838,7 +841,7 @@ def view_inventory(user_id, group_id):
     return "\n".join(lines)
 
 
-def view_fish_pond(user_id, group_id, page=1):
+def view_fish_pond(user_id, group_id, page=1, fish_type=None, fish_name=None):
     if not user_id:
         return "❌ 请提供 user_id"
     if not group_id:
@@ -853,14 +856,27 @@ def view_fish_pond(user_id, group_id, page=1):
     if page < 1:
         page = 1
     page_size = 10
-    fish_list, total = _db.get_pond(user_id, group_id, page=page, page_size=page_size)
+    fish_list, total = _db.get_pond(
+        user_id, group_id, page=page, page_size=page_size,
+        fish_type=fish_type, fish_name=fish_name,
+    )
     if not fish_list:
         return "🐟 鱼塘为空"
     total_pages = (total + page_size - 1) // page_size
     if page > total_pages:
         page = total_pages
-        fish_list, _ = _db.get_pond(user_id, group_id, page=page, page_size=page_size)
-    lines = [f"🐟 {user_id} 的鱼塘（第 {page}/{total_pages} 页，共 {total} 条）"]
+        fish_list, _ = _db.get_pond(
+            user_id, group_id, page=page, page_size=page_size,
+            fish_type=fish_type, fish_name=fish_name,
+        )
+    # Build title with filter info
+    title_parts = [f"🐟 {user_id} 的鱼塘"]
+    if fish_type:
+        title_parts.append(f"（{fish_type}）")
+    if fish_name:
+        title_parts.append(f"（{fish_name}）")
+    title_parts.append(f" 第 {page}/{total_pages} 页，共 {total} 条")
+    lines = ["".join(title_parts)]
     for f in fish_list:
         lock_icon = "🔒" if f["locked"] else ""
         big_icon = "🐠" if f["is_big"] else "🐟"
@@ -868,7 +884,12 @@ def view_fish_pond(user_id, group_id, page=1):
             f"  [{f['id']}] {big_icon} {f['fish_name']} ({f['fish_type']}) {f['size']:.1f}cm 价值{int(f['value'])}G {lock_icon} 📅{f['caught_date']}"
         )
     if page < total_pages:
-        lines.append(f"\n  下一页：/查看鱼塘 {page + 1}")
+        next_hint = "/查看鱼塘"
+        if fish_type:
+            next_hint += f" {fish_type}"
+        elif fish_name:
+            next_hint += f" {fish_name}"
+        lines.append(f"\n  下一页：{next_hint} {page + 1}")
     return "\n".join(lines)
 
 
@@ -995,6 +1016,34 @@ def sell_all_fish(user_id, group_id):
     if count == 0:
         return "❌ 没有可出售的鱼"
     return f"✅ 已出售 {count} 条鱼，获得 {int(total)} G"
+
+
+def force_sell_fish(user_id, group_id, mode="有保留"):
+    """强制出售鱼塘中的鱼，无视锁定。
+    mode: "有保留" (默认) 每种鱼保留最大的一条；"无保留" 全部出售"""
+    if not user_id:
+        return "❌ 请提供 user_id"
+    if not group_id:
+        return "❌ 请提供 group_id（群号）"
+    user = _db.get_user(user_id, group_id)
+    if not user:
+        return f"❌ 用户 {user_id} 在本群不存在"
+
+    keep_one = mode != "无保留"
+    sold_count, total_gold, kept_count = _db.force_sell(user_id, group_id, keep_one=keep_one)
+
+    if sold_count == 0:
+        return "❌ 鱼塘中没有可强制出售的鱼"
+
+    if keep_one:
+        return (
+            f"✅ 强制出售完成！共出售 {sold_count} 条鱼，获得 {int(total_gold)} G\n"
+            f"🐟 已为每种鱼保留最大的一条（共 {kept_count} 条）"
+        )
+    else:
+        return f"✅ 强制出售完成！共出售 {sold_count} 条鱼（含锁定），获得 {int(total_gold)} G"
+
+
 
 
 # ==================== 商店 ====================

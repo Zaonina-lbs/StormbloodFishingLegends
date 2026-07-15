@@ -26,6 +26,7 @@ from .game_engine import (
     sell_fish_by_name,
     sell_fish_by_id,
     sell_all_fish,
+    force_sell_fish,
     view_shop,
     buy_item,
     krypton,
@@ -171,12 +172,29 @@ class FishingPlugin(Star):
 
     @filter.command("查看鱼塘")
     async def cmd_fish_pond(self, event: AstrMessageEvent):
-        """查看钓上的鱼塘：/查看鱼塘 [页码]"""
+        """查看钓上的鱼塘：/查看鱼塘 [鱼的种类|鱼名] [页码]
+        示例：/查看鱼塘 鱼王  |  /查看鱼塘 红彩鱼  |  /查看鱼塘 鱼皇 2"""
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         args = parse_args(event.message_str)
-        page = args[1] if len(args) >= 2 else 1
-        result = view_fish_pond(user_id, group_id, page=page)
+        fish_type = None
+        fish_name = None
+        page = 1
+        VALID_TYPES = ("鱼王", "鱼皇", "普通鱼")
+        if len(args) >= 2:
+            a1 = args[1]
+            if a1.isdigit():
+                page = int(a1)
+            elif a1 in VALID_TYPES:
+                fish_type = a1
+                page = int(args[2]) if len(args) >= 3 and args[2].isdigit() else 1
+            else:
+                fish_name = a1
+                page = int(args[2]) if len(args) >= 3 and args[2].isdigit() else 1
+        result = view_fish_pond(
+            user_id, group_id, page=page,
+            fish_type=fish_type, fish_name=fish_name,
+        )
         yield event.plain_result(result)
 
     @filter.command("查看当前鱼饵")
@@ -253,6 +271,22 @@ class FishingPlugin(Star):
         group_id = event.get_group_id()
         result = sell_all_fish(user_id, group_id)
         yield event.plain_result(result)
+
+
+    @filter.command("强制出售")
+    async def cmd_force_sell(self, event: AstrMessageEvent):
+        """强制出售鱼塘中的鱼：/强制出售 [有保留|无保留]
+        有保留：每种鱼保留最大的一条（默认）
+        无保留：全部出售（包括锁定）"""
+        user_id = event.get_sender_id()
+        group_id = event.get_group_id()
+        msg = event.message_str.strip()
+        parts = msg.split(maxsplit=1)
+        param = parts[1] if len(parts) >= 2 else ""
+        mode = param if param in ("有保留", "无保留") else "有保留"
+        result = force_sell_fish(user_id, group_id, mode=mode)
+        yield event.plain_result(result)
+
 
     # ==================== 商店 ====================
 
