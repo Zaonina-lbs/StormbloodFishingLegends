@@ -275,15 +275,16 @@ class FishingPlugin(Star):
 
     @filter.command("强制出售")
     async def cmd_force_sell(self, event: AstrMessageEvent):
-        """强制出售鱼塘中的鱼：/强制出售 [有保留|无保留]
-        有保留：每种鱼保留最大的一条（默认）
+        """强制出售鱼塘中的鱼：/强制出售 [保留|仅留唯一|无保留]
+        保留：保留所有鱼饵鱼+每种其它鱼留最大的一条（默认）
+        仅留唯一：每种鱼只保留最大的一条
         无保留：全部出售（包括锁定）"""
         user_id = event.get_sender_id()
         group_id = event.get_group_id()
         msg = event.message_str.strip()
         parts = msg.split(maxsplit=1)
         param = parts[1] if len(parts) >= 2 else ""
-        mode = param if param in ("有保留", "无保留") else "有保留"
+        mode = param if param in ("保留", "仅留唯一", "无保留") else "保留"
         result = force_sell_fish(user_id, group_id, mode=mode)
         yield event.plain_result(result)
 

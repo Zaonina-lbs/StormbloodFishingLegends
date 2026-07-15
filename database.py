@@ -530,10 +530,11 @@ class Database:
         self.close()
         return len(ids), total
 
-    def force_sell(self, user_id, group_id, keep_one=False):
+    def force_sell(self, user_id, group_id, mode="保留"):
         """强制出售鱼塘中的所有鱼（无视锁定状态）。
-        keep_one=True: 每种鱼保留最大的一条，其余出售
-        keep_one=False: 全部出售"""
+        mode: 保留 - 保留所有鱼饵鱼+每种其它鱼留最大的一条（默认）
+              仅留唯一 - 每种鱼只保留最大的一条
+              无保留 - 全部出售"""
         self.connect()
         rows = self.conn.execute(
             "SELECT id,fish_name,size,value FROM fish_caught WHERE user_id=? AND group_id=? AND is_sold=0",
@@ -543,26 +544,26 @@ class Database:
             self.close()
             return 0, 0, 0
 
-        if keep_one:
-            # 按鱼名分组，每组保留 size 最大的一条
+        ids_to_sell = []
+        total = 0
+        if mode == "无保留":
+            ids_to_sell = [r["id"] for r in rows]
+            total = sum(r["value"] for r in rows)
+        else:
             groups = {}
             for r in rows:
                 name = r["fish_name"]
                 if name not in groups:
                     groups[name] = []
                 groups[name].append(r)
-            ids_to_sell = []
-            total = 0
             for name, group_rows in groups.items():
-                # 按 size 降序排列
                 sorted_rows = sorted(group_rows, key=lambda x: x["size"], reverse=True)
-                # 保留最大的一条，其余出售
+                is_lure = self._is_lure_name(name)
+                if mode == "保留" and is_lure:
+                    continue
                 for r in sorted_rows[1:]:
                     ids_to_sell.append(r["id"])
                     total += r["value"]
-        else:
-            ids_to_sell = [r["id"] for r in rows]
-            total = sum(r["value"] for r in rows)
 
         keep_count = len(rows) - len(ids_to_sell)
         if not ids_to_sell:
@@ -577,7 +578,6 @@ class Database:
             "UPDATE users SET gold=gold+? WHERE user_id=? AND group_id=?",
             (total, user_id, group_id),
         )
-        # 统计需从背包清除的鱼饵类鱼种
         lure_counts = {}
         for r in rows:
             if r["id"] in ids_to_sell and self._is_lure_name(r["fish_name"]):
@@ -587,9 +587,6 @@ class Database:
         self.conn.commit()
         self.close()
         return len(ids_to_sell), total, keep_count
-
-
-
     def get_caught_by_id(self, fish_id, user_id, group_id):
         self.connect()
         row = self.conn.execute(

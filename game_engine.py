@@ -790,7 +790,7 @@ def get_fish_help():
         "  /出售 [鱼名]\n"
         "  /出售 [id]\n"
         "  /全部出售\n"
-        "  /强制出售 [有保留|无保留]\n"
+        "  /强制出售 [保留|仅留唯一|无保留]\n"
         "\n【商店】\n"
         "  /商城\n"
         "  /购买道具 [id] [数量]\n"
@@ -1019,9 +1019,11 @@ def sell_all_fish(user_id, group_id):
     return f"✅ 已出售 {count} 条鱼，获得 {int(total)} G"
 
 
-def force_sell_fish(user_id, group_id, mode="有保留"):
+def force_sell_fish(user_id, group_id, mode="保留"):
     """强制出售鱼塘中的鱼，无视锁定。
-    mode: "有保留" (默认) 每种鱼保留最大的一条；"无保留" 全部出售"""
+    mode: "保留" (默认) 保留所有鱼饵鱼+每种其它鱼留最大的一条
+          "仅留唯一" 每种鱼只保留最大的一条
+          "无保留" 全部出售"""
     if not user_id:
         return "❌ 请提供 user_id"
     if not group_id:
@@ -1030,19 +1032,23 @@ def force_sell_fish(user_id, group_id, mode="有保留"):
     if not user:
         return f"❌ 用户 {user_id} 在本群不存在"
 
-    keep_one = mode != "无保留"
-    sold_count, total_gold, kept_count = _db.force_sell(user_id, group_id, keep_one=keep_one)
+    sold_count, total_gold, kept_count = _db.force_sell(user_id, group_id, mode=mode)
 
     if sold_count == 0:
         return "❌ 鱼塘中没有可强制出售的鱼"
 
-    if keep_one:
+    if mode == "无保留":
+        return f"✅ 强制出售完成！共出售 {sold_count} 条鱼（含锁定），获得 {int(total_gold)} G"
+    elif mode == "仅留唯一":
         return (
             f"✅ 强制出售完成！共出售 {sold_count} 条鱼，获得 {int(total_gold)} G\n"
             f"🐟 已为每种鱼保留最大的一条（共 {kept_count} 条）"
         )
     else:
-        return f"✅ 强制出售完成！共出售 {sold_count} 条鱼（含锁定），获得 {int(total_gold)} G"
+        return (
+            f"✅ 强制出售完成！共出售 {sold_count} 条鱼，获得 {int(total_gold)} G\n"
+            f"🐟 已保留所有鱼饵鱼和每种鱼最大的一条（共 {kept_count} 条）"
+        )
 
 
 
